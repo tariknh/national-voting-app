@@ -3565,31 +3565,24 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\herma\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\ohski\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\herma\\ikt201g25h\\Exam\\WebApplication1\\WebApplication1.csproj",
+      "projectUniqueName": "C:\\Users\\ohski\\ikt201g25h\\project\\WebApplication1\\WebApplication1.csproj",
       "projectName": "WebApplication1",
-      "projectPath": "C:\\Users\\herma\\ikt201g25h\\Exam\\WebApplication1\\WebApplication1.csproj",
-      "packagesPath": "C:\\Users\\herma\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\herma\\ikt201g25h\\Exam\\WebApplication1\\obj\\",
+      "projectPath": "C:\\Users\\ohski\\ikt201g25h\\project\\WebApplication1\\WebApplication1.csproj",
+      "packagesPath": "C:\\Users\\ohski\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\ohski\\ikt201g25h\\project\\WebApplication1\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\herma\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "C:\\Users\\ohski\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
