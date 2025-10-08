@@ -16,7 +16,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
-
+//comment only for test
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
