@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "2wvlosEacbI=",
+  "dgSpecHash": "Sn9x/jPEhRk=",
   "success": true,
   "projectFilePath": "C:\\Users\\ohski\\ikt201g25h\\project\\WebApplication1\\WebApplication1.csproj",
   "expectedPackageFiles": [
@@ -43,6 +43,8 @@
     "C:\\Users\\ohski\\.nuget\\packages\\microsoft.extensions.options\\9.0.8\\microsoft.extensions.options.9.0.8.nupkg.sha512",
     "C:\\Users\\ohski\\.nuget\\packages\\microsoft.extensions.primitives\\9.0.8\\microsoft.extensions.primitives.9.0.8.nupkg.sha512",
     "C:\\Users\\ohski\\.nuget\\packages\\mono.texttemplating\\3.0.0\\mono.texttemplating.3.0.0.nupkg.sha512",
+    "C:\\Users\\ohski\\.nuget\\packages\\npgsql\\9.0.4\\npgsql.9.0.4.nupkg.sha512",
+    "C:\\Users\\ohski\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\9.0.1\\npgsql.entityframeworkcore.postgresql.9.0.1.nupkg.sha512",
     "C:\\Users\\ohski\\.nuget\\packages\\sqlitepclraw.bundle_e_sqlite3\\2.1.10\\sqlitepclraw.bundle_e_sqlite3.2.1.10.nupkg.sha512",
     "C:\\Users\\ohski\\.nuget\\packages\\sqlitepclraw.core\\2.1.10\\sqlitepclraw.core.2.1.10.nupkg.sha512",
     "C:\\Users\\ohski\\.nuget\\packages\\sqlitepclraw.lib.e_sqlite3\\2.1.10\\sqlitepclraw.lib.e_sqlite3.2.1.10.nupkg.sha512",
