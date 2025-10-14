@@ -63,14 +63,6 @@
             "Microsoft.EntityFrameworkCore.Tools": {
               "target": "Package",
               "version": "[9.0.8, )"
-            },
-            "Npgsql": {
-              "target": "Package",
-              "version": "[9.0.4, )"
-            },
-            "Npgsql.EntityFrameworkCore.PostgreSQL": {
-              "target": "Package",
-              "version": "[9.0.1, )"
             }
           },
           "imports": [
