@@ -1,31 +1,149 @@
-html {
-  font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
+@import "tailwindcss";
 body {
-  margin-bottom: 60px;
+    background-color: #f7f8f9;
+    font-family: "Source Sans Pro", Arial, sans-serif;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+header.ds-header {
+    background-color: #00205b;
+    color: white;
+    padding: 0.75rem 1rem;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+.navbar a.nav-link {
+    color: #00205b !important;
+    font-weight: 500;
 }
+
+.navbar a.nav-link:hover {
+    text-decoration: underline;
+}
+
+main {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+.ds-card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    max-width: 700px;
+    width: 100%;
+    padding: 2rem;
+    height: 80vh;
+}
+
+.ds-card h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.ds-alert {
+    background-color: #fff5d1;
+    border-left: 4px solid #ffb100;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.btn-idporten {
+    background-color: #0062ba;
+    color: white;
+    font-weight: 600;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 4px;
+}
+
+.btn-idporten:hover {
+    background-color: #004c93;
+}
+
+.navbar-container {
+    background-color: #ffffff;
+    border-bottom: 1px solid #ddd;
+    /* optionally sticky */
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+}
+
+.logo-link .logo-text {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #00205b; /* gov-blue or dark nav color */
+    text-decoration: none;
+}
+
+.primary-nav ul {
+    list-style: none;
+    display: flex;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+}
+
+.primary-nav a {
+    color: #00205b;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem;
+}
+
+.primary-nav a:hover,
+.primary-nav a:focus {
+    text-decoration: underline;
+}
+
+.nav-actions .lang-switch {
+    margin-right: 1rem;
+    color: #666;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.nav-actions .login-btn {
+    background-color: #0062ba;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.nav-actions .login-btn:hover,
+.nav-actions .login-btn:focus {
+    background-color: #004c93;
+}
+
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #00205b;
+    color: white;
+    padding: 8px 12px;
+    z-index: 1001;
+    transition: top 0.3s;
+}
+
+.skip-link a {
+    color: white;
+    text-decoration: none;
+}
+
+.skip-link:focus-within {
+    top: 0;
+}
+

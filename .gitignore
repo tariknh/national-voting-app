@@ -1,2 +1,99 @@
+# ------------------------
+# .NET / C# / Rider
+# ------------------------
 bin/
 obj/
+out/
+.vs/
+.idea/
+*.sln.iml
+*.user
+*.suo
+*.userosscache
+*.userprefs
+*.csproj.user
+_ReSharper.Caches/
+*.rsuser
+
+# Logs and build
+*.log
+*.tmp
+*.temp
+*.bak
+artifacts/
+project.lock.json
+
+# Publish output
+*.pubxml
+*.publishproj
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+**/packages/*
+!**/packages/build/
+!**/packages/repositories.config
+
+# Config / secrets
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+.env
+
+# OS-specific
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+# macOS
+.DS_Store
+
+# Coverage / analysis
+*.coverage
+*.coveragexml
+TestResult.xml
+TestResults/
+*.stackdump
+*.dmp
+
+# Docker
+docker-compose.override.yml
+
+# ------------------------
+# Node / npm / Frontend
+# ------------------------
+node_modules/
+dist/
+build/
+.cache/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vscode/
+
+# lockfiles (optional: keep one for reproducible installs)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Framework-specific
+.next/
+.nuxt/
+out/
+.svelte-kit/
+.vite/
+vite.config.ts.timestamp*
+
+# TailwindCSS-generated files
+wwwroot/css/tailwind-output.css
+build.css
+*.tailwindcache
+.postcss-cache/
+
+# PostCSS cache (if applicable)
+.postcss-cache/
