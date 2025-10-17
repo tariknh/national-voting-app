@@ -1,4 +1,10 @@
 ﻿<!DOCTYPE html>
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var userName = HttpContextAccessor.HttpContext.Session.GetString("UserFullName");
+}
+
 <html lang="no">
 <head>
     <meta charset="utf-8" />
@@ -37,8 +43,14 @@
             </nav>
             <div class="nav-actions">
                 <a href="#" class="lang-switch">EN</a> |
-                <a href="#" class="lang-switch">NN</a>
-                <a asp-controller="Account" asp-action="Login" class="login-btn">Logg inn</a>
+                <a href="#" class="lang-switch">NO</a>
+                @if (string.IsNullOrEmpty(userName))
+                {
+                    <a asp-controller="Account" asp-action="Login" class="login-btn">Logg inn</a>
+                } else {
+                    <span>Hello, @userName!</span>
+                    <a class="btn btn-outline-danger" asp-controller="Account" asp-action="Logout">Logout</a>
+                }
             </div>
         </div>
     </header>
