@@ -24,6 +24,7 @@ public class AccountController : Controller
         Console.WriteLine("Somthing somthing");
         // Find user in database by Fodselsnr
         var user = await _context.Users
+            
             .FirstOrDefaultAsync(u => u.Fodselsnr == fodselsnr && u.Passord == password);
         
         if (user != null)
@@ -34,6 +35,7 @@ public class AccountController : Controller
             // Redirect to home page or dashboard
             return RedirectToAction("Index", "Home");
         }
+        
         else
         {
             // Login failed
