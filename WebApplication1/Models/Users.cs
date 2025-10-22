@@ -23,8 +23,8 @@ namespace WebApplication1.Models
         [Column("postnr")]
         public string? Postnr { get; set; }
         
-        [Column("city")]
-        public string? City { get; set; }
+        [Column("kommune")]
+        public string? Kommune { get; set; }
         
         [Column("phonenr")]
         public string? Phonenr { get; set; }
@@ -37,5 +37,8 @@ namespace WebApplication1.Models
         
         [Column("email")]
         public string? Email { get; set; }
+        
+        [Column("hasvoted")]
+        public bool? HasVoted { get; set; }
     }
 }
