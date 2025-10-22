@@ -21,6 +21,7 @@ public class HomeController : Controller
     {
         //fetching users from external database
         var users = await _context.Users.ToListAsync();
+        var stemmer = await _context.Stemmers.ToListAsync();
 
         if (users.Any())
         {
@@ -30,13 +31,23 @@ public class HomeController : Controller
                 Console.WriteLine($"User Found: {user.Firstname} {user.Lastname} {user.Fodselsnr} {user.Passord}");
             }
         }
+
+        /*Kode for å skive ut alle kommuner
+         if (stemmer.Any())
+        {
+            Console.WriteLine($"found kommune");
+            foreach (var stemme in stemmer)
+            {
+                Console.WriteLine($"Parti found: {stemme.Kommune}");
+            }
+        }*/
         
         else
         {
             Console.WriteLine("User Not Found");
         }
 
-        return View(users);
+        return View();
     }
     
 

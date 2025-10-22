@@ -11,11 +11,13 @@ public class ApplicationDbContext : IdentityDbContext
     {
     }
     public DbSet<User> Users { get; set; }
+    public DbSet<Stemmer> Stemmers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<User>().ToTable("users");
+        modelBuilder.Entity<Stemmer>().ToTable("stemmer");
     }
 }
