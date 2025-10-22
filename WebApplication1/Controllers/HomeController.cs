@@ -27,7 +27,7 @@ public class HomeController : Controller
             Console.WriteLine($"Found {users.Count} users");
             foreach (var user in users) 
             {
-                Console.WriteLine($"User Found: {user.Firstname} {user.Lastname} - Email: {user.Email}");
+                Console.WriteLine($"User Found: {user.Firstname} {user.Lastname} {user.Fodselsnr} {user.Passord}");
             }
         }
         

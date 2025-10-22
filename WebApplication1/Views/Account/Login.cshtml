@@ -1,0 +1,45 @@
+﻿@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="d-flex align-items-center justify-content-center bg-light py-5">
+    <div class="card shadow-lg border-0 rounded-4 p-4" style="width: 400px;">
+        <div class="card-body">
+            <h3 class="card-title text-center mb-4 fw-semibold text-primary">Logg inn</h3>
+
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="alert alert-danger text-center py-2">
+                    @ViewBag.ErrorMessage
+                </div>
+            }
+
+            <form asp-action="Login" method="post">
+                <div class="mb-3">
+                    <label for="fodselsnr" class="form-label">Fødselsnummer</label>
+                    <input type="text"
+                           class="form-control form-control-lg rounded-3"
+                           id="fodselsnr"
+                           name="fodselsnr"
+                           placeholder="11-sifret fødselsnummer"
+                           value="@ViewBag.Fodselsnr"
+                           required />
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Passord</label>
+                    <input type="password"
+                           class="form-control form-control-lg rounded-3"
+                           id="password"
+                           name="password"
+                           placeholder="Skriv inn passord"
+                           required />
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 rounded-3 py-2">
+                    Logg inn
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
