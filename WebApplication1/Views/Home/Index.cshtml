@@ -1,38 +1,80 @@
-﻿@{
+﻿@model HomeViewModel
+@{
     ViewData["Title"] = "Digital Valgportal for Norge";
 }
 
+
+
+
 <div class="ds-card">
-    <h1 class="">Digital valgportal for Norge</h1>
+    @if (!Model.IsLoggedIn)
+    {
+        <h1>Digital valgportal for Norge</h1>
 
-    <div class="ds-alert">
-        For bedre lesbarhet kan du aktivere 
-        <a href="#" class="text-primary">tilgjengelighetsmodus</a> 
-        med større tekst og høy kontrast.
-    </div>
+        <div class="ds-alert">
+            For bedre lesbarhet kan du aktivere
+            <a href="#" class="text-primary">tilgjengelighetsmodus</a>
+            med større tekst og høy kontrast.
+        </div>
 
-    <p class="text-end">
-        <a href="#">EN</a> | <a href="#">NN</a>
-    </p>
+        <p class="text-end">
+            <a href="#">EN</a> | <a href="#">NN</a>
+        </p>
 
-    <h2>Velkommen til den digitale valgportalen</h2>
-    <p>
-        Her kan du trygt og enkelt avgi din stemme digitalt. 
-        Du logger inn med ID-porten, og systemet finner automatisk 
-        hvilken kommune du tilhører.
-    </p>
+        <h2>Velkommen til den digitale valgportalen</h2>
+        <p>
+            Her kan du trygt og enkelt avgi din stemme digitalt.
+            Du logger inn med ID-porten, og systemet finner automatisk
+            hvilken kommune du tilhører.
+        </p>
 
-    <a asp-controller="Account" asp-action="Login" class="btn-idporten">Logg inn med ID-porten</a>
+        <a asp-controller="Account" asp-action="Login" class="btn-idporten">
+            Logg inn med ID-porten
+        </a>
 
-    <h3 class="mt-4 text-6xl">Hva du trenger</h3>
-    <ul>
-        <li>Gyldig elektronisk ID (BankID, MinID, Buypass eller Commfides)</li>
-        <li>Registrert bosted i Norge</li>
-    </ul>
+        <h3 class="mt-4">Hva du trenger</h3>
+        <ul>
+            <li>Gyldig elektronisk ID (BankID, MinID, Buypass eller Commfides)</li>
+            <li>Registrert bosted i Norge</li>
+        </ul>
 
-    <h3>Om løsningen</h3>
-    <p>
-        Den digitale valgportalen er utviklet for å gjøre stemmegivning 
-        mer tilgjengelig for alle, uavhengig av alder eller teknisk erfaring.
-    </p>
+        <h3>Om løsningen</h3>
+        <p>
+            Den digitale valgportalen er utviklet for å gjøre stemmegivning
+            mer tilgjengelig for alle, uavhengig av alder eller teknisk erfaring.
+        </p>
+    }
+    else
+    {
+        <!-- Logged-in view -->
+        <h1>Velkommen tilbake, @Model.FullName</h1>
+
+        <div class="ds-alert ds-alert--success">
+            Du er logget inn via ID-porten. Systemet har funnet din kommune:
+            <strong>@Model.Kommune</strong>.
+        </div>
+
+        <section class="ds-card__section">
+            <h2>Dine valg</h2>
+            <p>Her kan du se tilgjengelige valg og status for stemmegivning.</p>
+            <ul class="ds-list">
+                <li>
+                    <a href="/Vote/Local" class="ds-link">Kommunestyrevalg 2025</a> – Ikke stemt ennå
+                </li>
+                <li>
+                    <a href="/Vote/National" class="ds-link">Stortingsvalg 2025</a> – Åpner 15. august
+                </li>
+            </ul>
+        </section>
+
+        <section class="ds-card__section">
+            <h2>Din profil</h2>
+            <ul>
+                <li><strong>Navn:</strong> @User.Identity.Name</li>
+                <li><strong>Fødselsnummer:</strong> 12345678910</li>
+                <li><strong>Kommune:</strong> Kristiansand</li>
+            </ul>
+            <a href="/Account/Logout" class="ds-link text-danger">Logg ut</a>
+        </section>
+    }
 </div>

@@ -16,7 +16,7 @@
 
             <form asp-action="Login" method="post">
                 <div class="mb-3">
-                    <label for="fodselsnr" class="form-label">Fødselsnummer</label>
+                    <label for="fodselsnr" class="form-label">Fødselsnummer!</label>
                     <input type="text"
                            class="form-control form-control-lg rounded-3"
                            id="fodselsnr"
@@ -36,9 +36,11 @@
                            required />
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100 rounded-3 py-2">
+                <button type="submit" class="login-btn">
                     Logg inn
                 </button>
+                <a asp-controller="Account" type="submit"  class="login-btn">Logg inn</a>
+                
             </form>
         </div>
     </div>
