@@ -9,9 +9,12 @@
     var message = TempData["VoteMessage"] as string;
 }
 
-<section class="ds-container mx-auto max-w-3xl py-10">
-    <div class="ds-card shadow-md border border-gray-200 rounded-lg p-8 bg-white">
-        <header class="mb-8">
+<section class="ds-container mx-auto max-w-3xl py-10 min-h-screen">
+    <div class="ds-card shadow-md border border-gray-200 rounded-lg p-8 bg-white w-full h-auto">
+
+
+
+    <header class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 mb-2">Stortingsvalg 2025</h1>
             <p class="text-gray-600">Velkommen, <strong>@navn</strong> 👋 Du kan avgi din stemme til årets stortingsvalg her.</p>
         </header>
@@ -35,7 +38,8 @@
         <form asp-action="SubmitVote" method="post" class="ds-card__section">
             <h2 class="text-xl font-semibold mb-4 text-gray-800">Velg ditt parti</h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4
+">
                 @foreach (var party in parties)
                 {
                     <label for="@party" class="block border border-gray-200 rounded-lg p-4 hover:border-blue-500 transition-all duration-200 cursor-pointer bg-gray-50 hover:bg-white">
@@ -47,20 +51,17 @@
                 }
             </div>
 
-            <div class="mt-8 flex items-center justify-between">
+            <div class="mt-8 flex items-center">
                 <a asp-controller="Home" asp-action="Index" class="ds-link text-blue-700 hover:underline">
                     ← Tilbake til forsiden
                 </a>
 
-                <button type="submit" class="btn-primary px-6 py-2 rounded-md shadow-sm">
+                <button type="submit" class="btn-primary px-6 py-2 rounded-md shadow-sm ml-auto">
                     Avgi stemme
                 </button>
             </div>
-        </form>
 
-        <footer class="ds-card__section mt-10 border-t pt-6 text-sm text-gray-500">
-            <p>Din stemme blir kryptert og lagret sikkert i det nasjonale valgsystemet. <br />
-                <a href="#" class="text-blue-600 hover:underline">Les mer om personvern</a>.</p>
-        </footer>
+
+        </form> 
     </div>
 </section>

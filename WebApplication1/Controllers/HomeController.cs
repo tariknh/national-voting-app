@@ -29,6 +29,7 @@ public class HomeController : Controller
         }
         
         
+        
         //this logs all users just to get the list of them in console
         //----
         var users =  await _context.Users.ToListAsync();
@@ -49,7 +50,11 @@ public class HomeController : Controller
             Fodselsnr = fodselsnr,
             Kommune = targetUser?.Kommune,
         };
-
+// Lagre kommunen i session slik at VoteController kan bruke den
+        if (!string.IsNullOrEmpty(model.Kommune))
+        {
+            HttpContext.Session.SetString("Kommune", model.Kommune);
+        }
         return View(model);
     }
 
