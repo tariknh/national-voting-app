@@ -122,6 +122,15 @@ main {
     font-weight: 600;
 }
 
+.login-btn {
+    background-color: #0062ba;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
 .nav-actions .login-btn:hover,
 .nav-actions .login-btn:focus {
     background-color: #004c93;
