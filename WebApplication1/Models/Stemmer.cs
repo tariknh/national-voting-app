@@ -81,7 +81,5 @@ namespace WebApplication1.Models
 
         [Column("partiet_sentrum")]
         public int PartietSentrum { get; set; } = 0;
-
-       
     }
 }
