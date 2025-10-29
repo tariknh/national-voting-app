@@ -70,10 +70,11 @@
         <section class="ds-card__section">
             <h2>Din profil</h2>
             <ul>
-                <li><strong>Navn:</strong> @User.Identity.Name</li>
-                <li><strong>Fødselsnummer:</strong> 12345678910</li>
-                <li><strong>Kommune:</strong> Kristiansand</li>
+                <li><strong>Navn:</strong> @Model.FullName</li>
+                <li><strong>Fødselsnummer:</strong> @Model.Fodselsnr</li>
+                <li><strong>Kommune:</strong> @Model.Kommune</li>
             </ul>
+
             <a href="/Account/Logout" class="ds-link text-danger">Logg ut</a>
         </section>
     }
