@@ -1,8 +1,12 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
 using WebApplication1.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WebApplication1.Controllers;
 
@@ -16,84 +20,91 @@ public class HomeController : Controller
         _logger = logger;
         _context = context;
     }
-    
+
+    // ----------------------------
+    // Trigger BankID login
+    // ----------------------------
+    public IActionResult Login()
+    {
+        // Redirects to Criipto / BankID login
+        var redirectUri = Url.Action("Index", "Home"); // redirect after login
+        return Challenge(new AuthenticationProperties { RedirectUri = redirectUri },
+                         OpenIdConnectDefaults.AuthenticationScheme);
+    }
+
+    // ----------------------------
+    // Protected page example
+    // ----------------------------
+    [Authorize]
+    public IActionResult Protected()
+    {
+        return View();
+    }
+
+    // ----------------------------
+    // Logout
+    // ----------------------------
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme);
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return RedirectToAction("Index");
+    }
+
+    // ----------------------------
+    // Main page
+    // ----------------------------
     public async Task<IActionResult> Index()
     {
-        var fullName = HttpContext.Session.GetString("UserFullName");
-        var fodselsnr = HttpContext.Session.GetString("Fodselsnr");
-        
+        // ----------------------------
+        // Read info from OIDC claims
+        // ----------------------------
+        string? fullName = null;
+        string? fodselsnr = null;
+        string? email = null;
+        string? phone = null;
+
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            fullName = User.FindFirst("name")?.Value;
+            fodselsnr = User.FindFirst("sub")?.Value;      // BankID fødselsnummer
+            email = User.FindFirst("email")?.Value;       // BankID email
+            phone = User.FindFirst("phone_number")?.Value; // BankID telefon (om tilgjengelig)
+
+            HttpContext.Session.SetString("UserFullName", fullName ?? "");
+            HttpContext.Session.SetString("Fodselsnr", fodselsnr ?? "");
+        }
+
+        // ----------------------------
+        // Fetch extra info from DB if user exists
+        // ----------------------------
         User? targetUser = null;
         if (!string.IsNullOrEmpty(fodselsnr))
         {
             targetUser = await _context.Users.FirstOrDefaultAsync(u => u.Fodselsnr == fodselsnr);
         }
-        
-        
-        
-        //this logs all users just to get the list of them in console
-        //----
-        var users =  await _context.Users.ToListAsync();
 
-        if (users.Any())
-        {
-            Console.WriteLine($"Found {users.Count} users");
-            foreach (var user in users) 
-            {
-                Console.WriteLine($"User Found: {user.Firstname} {user.Lastname} {user.Fodselsnr} {user.Passord}");
-            }
-        }
-        //----
-
+        // ----------------------------
+        // Combine data into ViewModel
+        // ----------------------------
         var model = new HomeViewModel
         {
             FullName = fullName,
             Fodselsnr = fodselsnr,
+            Email = email,
+            Phone = phone,
             Kommune = targetUser?.Kommune,
+            // du kan legge til flere felt her fra DB hvis du ønsker
         };
-// Lagre kommunen i session slik at VoteController kan bruke den
+
         if (!string.IsNullOrEmpty(model.Kommune))
         {
             HttpContext.Session.SetString("Kommune", model.Kommune);
         }
+
         return View(model);
     }
 
-    //old index, not in use anymore. Replaced by index above ^
-    public async Task<IActionResult> OldIndex()
-    {
-        //fetching users from external database
-        var users = await _context.Users.ToListAsync();
-        var stemmer = await _context.Stemmers.ToListAsync();
-
-        if (users.Any())
-        {
-            Console.WriteLine($"Found {users.Count} users");
-            foreach (var user in users) 
-            {
-                Console.WriteLine($"User Found: {user.Firstname} {user.Lastname} {user.Fodselsnr} {user.Passord}");
-            }
-        }
-
-        /*Kode for å skive ut alle kommuner
-         if (stemmer.Any())
-        {
-            Console.WriteLine($"found kommune");
-            foreach (var stemme in stemmer)
-            {
-                Console.WriteLine($"Parti found: {stemme.Kommune}");
-            }
-        }*/
-        
-        else
-        {
-            Console.WriteLine("User Not Found");
-        }
-        
-        
-
-        return View();
-    }
-    
 
     public IActionResult Privacy()
     {
