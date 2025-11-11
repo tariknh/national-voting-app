@@ -1,12 +1,16 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("NeonDatabase") ??
-                       throw new InvalidOperationException("Connection string 'NeonDatabase' not found.");
+//load the secret .env file to the program (encryption and all that)
+Env.Load();
+
+//get the connection string from the .env file
+var connectionString = Env.GetString("CONNECTION_STRING")
+    ?? throw new InvalidOperationException("Connection string not found in .env");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
