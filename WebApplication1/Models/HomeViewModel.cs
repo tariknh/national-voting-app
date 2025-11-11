@@ -8,4 +8,5 @@ public class HomeViewModel
     public string? Phone { get; set; }
     public bool IsLoggedIn => !string.IsNullOrEmpty(Fodselsnr);
     public string? Kommune { get; set; }
+    public bool HasVoted { get; set; }
 }

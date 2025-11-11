@@ -29,7 +29,8 @@ namespace WebApplication1.Models
         [Column("phonenr")]
         public string? Phonenr { get; set; }
         
-        [Column("fodselsnr")]
+        [Column("fodselsnr", TypeName = "varchar(255)")]
+        
         public string? Fodselsnr { get; set; }
         
         [Column("passord")]

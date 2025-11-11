@@ -1,4 +1,5 @@
-﻿@model HomeViewModel
+﻿@model WebApplication1.Models.HomeViewModel
+
 @{
     ViewData["Title"] = "Digital Valgportal for Norge";
 }
@@ -57,7 +58,8 @@
             <p>Her kan du se tilgjengelige valg og status for stemmegivning.</p>
             <ul class="ds-list">
                 <li>
-                    <a href="/Vote/Local" class="ds-link">Kommunestyrevalg 2025</a> – Ikke stemt ennå
+                    <a href="/Vote/Local" class="ds-link">Kommunestyrevalg 2025</a> – 
+                    @(Model.HasVoted ? "Allerede stemt" : "Ikke stemt ennå")
                 </li>
                 <li>
                     <a href="/Vote/National" class="ds-link">Stortingsvalg 2025</a> – Åpner 15. august
@@ -69,11 +71,10 @@
             <h2>Din profil</h2>
             <ul>
                 <li><strong>Navn:</strong> @Model.FullName</li>
-                <li><strong>Fødselsnummer:</strong> @Model.Fodselsnr</li>
+                <li><strong>Fødselsnummer / ID:</strong> @Model.Fodselsnr</li>
                 <li><strong>Email:</strong> @Model.Email</li>
                 <li><strong>Telefon:</strong> @Model.Phone</li>
                 <li><strong>Kommune:</strong> @Model.Kommune</li>
-
             </ul>
             <a asp-controller="Home" asp-action="Logout" class="ds-link text-danger">Logg ut</a>
         </section>
