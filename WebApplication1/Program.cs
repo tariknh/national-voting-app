@@ -75,7 +75,6 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters.RoleClaimType = "role";
 
 
-    options.ClaimActions.MapUniqueJsonKey("uniqueuserid", "sub");
     options.ClaimActions.MapUniqueJsonKey("email", "email");
     options.ClaimActions.MapUniqueJsonKey("phone_number", "phone_number");
 
@@ -93,6 +92,12 @@ builder.Services.AddAuthentication(options =>
         // --- Step 2: Normalize provider-specific claims to .NET standard claims ---
         if (context.Principal.Identity is ClaimsIdentity identity)
         {
+            var subClaim = identity.FindFirst("sub"); // OIDC standard subject claim
+            if (subClaim != null && !identity.HasClaim(c => c.Type == ClaimTypes.NameIdentifier))
+            {
+                identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, subClaim.Value));
+                Console.WriteLine($"✅ Mapped 'sub' claim to '{ClaimTypes.NameIdentifier}'");
+            }
             // Find the 'givenname' claim from the provider
             var givenNameClaim = identity.FindFirst("givenname");
             if (givenNameClaim != null)

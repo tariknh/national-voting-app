@@ -10,19 +10,10 @@ namespace WebApplication1.Models
         
         [Column("firstname")]
         public string? Firstname { get; set; }
-        
-        [Column("lastname")]
+
+        [Column("lastname")] 
         public string? Lastname { get; set; }
-        
-        [Column("sex")]
-        public string? Sex { get; set; }
-        
-        [Column("adresse")]
-        public string? Adresse { get; set; }
-        
-        [Column("postnr")]
-        public string? Postnr { get; set; }
-        
+
         [Column("kommune")]
         public string? Kommune { get; set; }
         
@@ -33,13 +24,11 @@ namespace WebApplication1.Models
         
         public string? Fodselsnr { get; set; }
         
-        [Column("passord")]
-        public string? Passord { get; set; }
-        
-        [Column("email")]
-        public string? Email { get; set; }
-        
+      
+    
         [Column("hasvoted")]
         public bool? HasVoted { get; set; }
+        [Column("bankiduuid")]
+        public string? BankIdUuid { get; set; }
     }
 }

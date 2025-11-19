@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Models;
 
@@ -16,8 +17,14 @@ public class ApplicationDbContext : IdentityDbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Ignore<IdentityUser>();
 
         modelBuilder.Entity<User>().ToTable("users");
         modelBuilder.Entity<Stemmer>().ToTable("stemmer");
+        
+        modelBuilder.Entity<User>()
+            .Property(u => u.BankIdUuid)
+            .HasColumnType("varchar(36)")  
+            .IsRequired(false);
     }
 }
