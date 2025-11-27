@@ -1,16 +1,15 @@
-﻿@model HomeViewModel
+﻿@model WebApplication1.Models.HomeViewModel
+
 @{
     ViewData["Title"] = "Digital Valgportal for Norge";
 }
 
-
-
-
 <div class="ds-card">
+
     @if (!Model.IsLoggedIn)
     {
+        <!-- Logged-out view -->
         <h1>Digital valgportal for Norge</h1>
-
         <div class="ds-alert">
             For bedre lesbarhet kan du aktivere
             <a href="#" class="text-primary">tilgjengelighetsmodus</a>
@@ -28,7 +27,7 @@
             hvilken kommune du tilhører.
         </p>
 
-        <a asp-controller="Account" asp-action="Login" class="btn-idporten">
+        <a asp-controller="Home" asp-action="Login" class="btn-idporten">
             Logg inn med ID-porten
         </a>
 
@@ -59,7 +58,8 @@
             <p>Her kan du se tilgjengelige valg og status for stemmegivning.</p>
             <ul class="ds-list">
                 <li>
-                    <a href="/Vote/Local" class="ds-link">Kommunestyrevalg 2025</a> – Ikke stemt ennå
+                    <a href="/Vote/Local" class="ds-link">Kommunestyrevalg 2025</a> – 
+                    @(Model.HasVoted ? "Allerede stemt" : "Ikke stemt ennå")
                 </li>
                 <li>
                     <a href="/Vote/National" class="ds-link">Stortingsvalg 2025</a> – Åpner 15. august
@@ -70,11 +70,13 @@
         <section class="ds-card__section">
             <h2>Din profil</h2>
             <ul>
-                <li><strong>Navn:</strong> @User.Identity.Name</li>
-                <li><strong>Fødselsnummer:</strong> 12345678910</li>
-                <li><strong>Kommune:</strong> Kristiansand</li>
+                <li><strong>Navn:</strong> @Model.FullName</li>
+                <li><strong>Fødselsnummer / ID:</strong> @Model.Fodselsnr</li>
+                <li><strong>Email:</strong> @Model.Email</li>
+                <li><strong>Telefon:</strong> @Model.Phone</li>
+                <li><strong>Kommune:</strong> @Model.Kommune</li>
             </ul>
-            <a href="/Account/Logout" class="ds-link text-danger">Logg ut</a>
+            <a asp-controller="Home" asp-action="Logout" class="ds-link text-danger">Logg ut</a>
         </section>
     }
 </div>

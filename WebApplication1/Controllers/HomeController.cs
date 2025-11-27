@@ -1,108 +1,148 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebApplication1.Models;
-using WebApplication1.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using WebApplication1.Data;
+using WebApplication1.Models;
 
-namespace WebApplication1.Controllers;
-
-public class HomeController : Controller
+namespace WebApplication1.Controllers
 {
-    private readonly ILogger<HomeController> _logger;
-    private readonly ApplicationDbContext _context;
+    public class HomeController : Controller
+    {
+        private readonly ILogger<HomeController> _logger;
+        private readonly ApplicationDbContext _context;
 
-    public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
-    {
-        _logger = logger;
-        _context = context;
-    }
-    
-    public async Task<IActionResult> Index()
-    {
-        var fullName = HttpContext.Session.GetString("UserFullName");
-        var fodselsnr = HttpContext.Session.GetString("Fodselsnr");
-        
-        User? targetUser = null;
-        if (!string.IsNullOrEmpty(fodselsnr))
+        public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
         {
-            targetUser = await _context.Users.FirstOrDefaultAsync(u => u.Fodselsnr == fodselsnr);
+            _logger = logger;
+            _context = context;
         }
-        
-        
-        
-        //this logs all users just to get the list of them in console
-        //----
-        var users =  await _context.Users.ToListAsync();
 
-        if (users.Any())
+        public async Task<IActionResult> Index()
         {
-            Console.WriteLine($"Found {users.Count} users");
-            foreach (var user in users) 
+            // 1. Create the ViewModel and set the login status based on authentication
+            var model = new HomeViewModel
             {
-                Console.WriteLine($"User Found: {user.Firstname} {user.Lastname} {user.Fodselsnr} {user.Passord}");
-            }
-        }
-        //----
+                IsLoggedIn = User.Identity?.IsAuthenticated ?? false
+            };
 
-        var model = new HomeViewModel
-        {
-            FullName = fullName,
-            Fodselsnr = fodselsnr,
-            Kommune = targetUser?.Kommune,
-        };
-// Lagre kommunen i session slik at VoteController kan bruke den
-        if (!string.IsNullOrEmpty(model.Kommune))
-        {
-            HttpContext.Session.SetString("Kommune", model.Kommune);
-        }
-        return View(model);
-    }
-
-    //old index, not in use anymore. Replaced by index above ^
-    public async Task<IActionResult> OldIndex()
-    {
-        //fetching users from external database
-        var users = await _context.Users.ToListAsync();
-        var stemmer = await _context.Stemmers.ToListAsync();
-
-        if (users.Any())
-        {
-            Console.WriteLine($"Found {users.Count} users");
-            foreach (var user in users) 
+            // 2. If the user is not logged in, show the public view and exit.
+            if (!model.IsLoggedIn)
             {
-                Console.WriteLine($"User Found: {user.Firstname} {user.Lastname} {user.Fodselsnr} {user.Passord}");
+                _logger.LogInformation("User is not authenticated. Showing logged-out view.");
+                return View(model);
             }
-        }
 
-        /*Kode for å skive ut alle kommuner
-         if (stemmer.Any())
-        {
-            Console.WriteLine($"found kommune");
-            foreach (var stemme in stemmer)
+            // --- USER IS AUTHENTICATED ---
+
+            // 3. Get the user's unique, stable ID from the claims principal.
+            // This is the 'sub' claim we mapped to NameIdentifier in Program.cs.
+            var bankIdUuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(bankIdUuid))
             {
-                Console.WriteLine($"Parti found: {stemme.Kommune}");
+                _logger.LogWarning("User is authenticated but the NameIdentifier claim is missing. Logging out.");
+                // This is a rare but critical error. Forcing a logout is a safe recovery step.
+                return await Logout();
             }
-        }*/
-        
-        else
+            
+            _logger.LogInformation("Authenticated user found with BankIdUuid: {BankIdUuid}", bankIdUuid);
+
+            // 4. Fetch the user from your database using the unique ID.
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.BankIdUuid == bankIdUuid);
+
+            // 5. If the user doesn't exist in your database, create a new entry.
+            if (dbUser == null)
+            {
+                _logger.LogInformation("User not found in database. Creating new user entry.");
+                dbUser = new User
+                {
+                    BankIdUuid = bankIdUuid,
+                    Firstname = User.FindFirst(ClaimTypes.GivenName)?.Value,
+                    Lastname = User.FindFirst(ClaimTypes.Surname)?.Value,
+                    Phonenr = User.FindFirst("phone_number")?.Value, // Assuming phone is mapped
+                    Kommune = "Unknown", // The 'address.locality' claim was empty in your logs
+                    HasVoted = false
+                };
+                _context.Users.Add(dbUser);
+                await _context.SaveChangesAsync();
+            }
+
+            // 6. Populate the ViewModel with data from the claims and the database user.
+            model.FullName = User.Identity?.Name;
+            model.Phone = dbUser.Phonenr;
+            model.Kommune = dbUser.Kommune;
+            model.Fodselsnr = dbUser.Fodselsnr; // This will be null unless you set it elsewhere
+            model.HasVoted = dbUser.HasVoted ?? false; // Safely handle null from the database
+
+            return View(model);
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> Vote(string party)
         {
-            Console.WriteLine("User Not Found");
+            // Use the stable NameIdentifier to find the user
+            var bankIdUuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(bankIdUuid))
+            {
+                return Unauthorized("User identifier not found in claims.");
+            }
+
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.BankIdUuid == bankIdUuid);
+            if (dbUser == null)
+            {
+                return NotFound("User not found in the database.");
+            }
+
+            if (dbUser.HasVoted == true)
+            {
+                TempData["Message"] = "You have already voted.";
+                return RedirectToAction("Index");
+            }
+
+            // Register the vote (logic for storing the actual vote for 'party' would go here)
+            // For now, we just mark the user as having voted.
+            dbUser.HasVoted = true;
+            await _context.SaveChangesAsync();
+
+            TempData["Message"] = "Your vote has been registered successfully!";
+            return RedirectToAction("Index");
+        }
+
+        // --- Authentication Actions ---
+
+        public IActionResult Login()
+        {
+            // Challenge the OpenIdConnect scheme, which will trigger the redirect to Criipto.
+            var redirectUri = Url.Action("Index", "Home");
+            return Challenge(new AuthenticationProperties { RedirectUri = redirectUri }, OpenIdConnectDefaults.AuthenticationScheme);
         }
         
-        
+        public async Task<IActionResult> Logout()
+        {
+            // Sign out from the cookie and the OIDC provider.
+            await HttpContext.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            HttpContext.Session.Clear();
+            return RedirectToAction("Index");
+        }
 
-        return View();
-    }
-    
+        // --- Standard Pages ---
 
-    public IActionResult Privacy()
-    {
-        return View();
-    }
+        public IActionResult Privacy() => View();
 
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
-    {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        [Authorize]
+        public IActionResult Protected() => View();
+
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
     }
 }
