@@ -2,7 +2,9 @@
 @using Microsoft.AspNetCore.Http
 @inject IHttpContextAccessor HttpContextAccessor
 @{
-    var userName = HttpContextAccessor.HttpContext.Session.GetString("UserFullName");
+    var httpContext = HttpContextAccessor.HttpContext;
+    var isAuthenticated = httpContext?.User?.Identity?.IsAuthenticated ?? false;
+    var userName = httpContext?.User?.Identity?.Name ?? httpContext?.Session.GetString("UserFullName");
 }
 
 <html lang="no">
@@ -47,14 +49,16 @@
                 </ul>
             </nav>
             <div class="nav-actions">
-                <a href="#" class="lang-switch">EN</a> |
-                <a href="#" class="lang-switch">NO</a>
-                @if (string.IsNullOrEmpty(userName))
+                <a href="#" class="lang-switch" aria-label="Switch to English">EN</a> |
+                <a href="#" class="lang-switch" aria-label="Switch to Norwegian">NO</a>
+                @if (!isAuthenticated)
                 {
-                    <a asp-controller="Account" asp-action="Login" class="login-btn">Logg inn</a>
-                } else {
-                    <span>Velkommen, @userName!</span>
-                    <a class="btn btn-outline-danger" asp-controller="Account" asp-action="Logout">Logout</a>
+                    <a asp-controller="Home" asp-action="Login" class="login-btn">Logg inn</a>
+                }
+                else
+                {
+                    <span class="fw-semibold">@(!string.IsNullOrWhiteSpace(userName) ? $"Hei, {userName}" : "Du er innlogget")</span>
+                    <a class="btn btn-outline-danger" asp-controller="Home" asp-action="Logout">Logg ut</a>
                 }
             </div>
         </div>

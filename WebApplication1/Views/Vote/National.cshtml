@@ -3,6 +3,9 @@
 @{
     ViewData["Title"] = "Stortingsvalg 2025";
     var displayName = string.IsNullOrWhiteSpace(Model.FullName) ? "Velger" : Model.FullName;
+    var parties = Model.Parties ?? Array.Empty<string>();
+    var voteInstructionId = "vote-instructions";
+    var voteStatusId = "vote-status";
 }
 
 @section Styles {
@@ -53,6 +56,18 @@
             gap: 1rem;
         }
 
+        .vote-fieldset {
+            border: 0;
+            padding: 0;
+            margin: 0;
+        }
+
+        .vote-fieldset legend {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
         .vote-option {
             border: 1px solid #e3e7f0;
             border-radius: 10px;
@@ -82,6 +97,34 @@
             text-decoration: underline;
             font-weight: 600;
         }
+
+        .vote-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1050;
+        }
+
+        .vote-modal-backdrop.show {
+            display: flex;
+        }
+
+        .vote-modal {
+            background: #fff;
+            border-radius: 16px;
+            max-width: 480px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+        }
+
+        .vote-modal h2 {
+            font-size: 1.4rem;
+            margin-bottom: 0.75rem;
+        }
     </style>
 }
 
@@ -100,7 +143,7 @@
 
     @if (!string.IsNullOrEmpty(Model.StatusMessage))
     {
-        <div class="vote-alert mb-4" role="alert">
+        <div class="vote-alert mb-4" role="status" aria-live="polite" id="@voteStatusId">
             @Model.StatusMessage
         </div>
     }
@@ -125,17 +168,23 @@
                 }
                 else
                 {
-                    <form asp-action="SubmitVote" method="post">
+                    <form asp-action="SubmitVote" method="post" aria-describedby="@voteInstructionId" id="vote-form">
                         @Html.AntiForgeryToken()
-                        <div class="vote-grid">
-                            @foreach (var party in Model.Parties)
-                            {
-                                <label class="vote-option" for="party-@party.Replace(" ", "-")">
-                                    <span class="fw-semibold">@party</span>
-                                    <input type="radio" id="party-@party.Replace(" ", "-")" name="party" value="@party" required />
-                                </label>
-                            }
-                        </div>
+                        <fieldset class="vote-fieldset">
+                            <legend>Velg hvilket parti du ønsker å stemme på</legend>
+                            <p id="@voteInstructionId" class="text-muted">Velg nøyaktig ett parti fra listen for å gå videre.</p>
+                            <div class="vote-grid" role="radiogroup" aria-describedby="@voteInstructionId">
+                                @for (var i = 0; i < parties.Count; i++)
+                                {
+                                    var party = parties[i];
+                                    var optionId = $"party-option-{i}";
+                                    <label class="vote-option" for="@optionId">
+                                        <span class="fw-semibold">@party</span>
+                                        <input type="radio" id="@optionId" name="party" value="@party" required />
+                                    </label>
+                                }
+                            </div>
+                        </fieldset>
 
                         <div class="d-flex flex-wrap gap-3 align-items-center mt-4">
                             <a asp-controller="Home" asp-action="Index" class="valg-link">← Tilbake til forsiden</a>
@@ -162,3 +211,70 @@
         </div>
     </div>
 </div>
+
+<div class="vote-modal-backdrop" id="voteConfirmModal" role="dialog" aria-modal="true" aria-labelledby="voteConfirmTitle" aria-describedby="voteConfirmText">
+    <div class="vote-modal">
+        <p class="vote-section-title mb-2" id="voteConfirmTitle">Bekreft stemme</p>
+        <h2 id="voteConfirmHeadline">Er du sikker?</h2>
+        <p id="voteConfirmText">Du er i ferd med å stemme på <strong id="voteConfirmParty"></strong>. Stemmen registreres umiddelbart når du bekrefter.</p>
+        <div class="d-flex justify-content-end gap-3 mt-4">
+            <button type="button" class="btn btn-outline-secondary" id="cancelVoteBtn">Avbryt</button>
+            <button type="button" class="btn-idporten btn" id="confirmVoteBtn">Bekreft og send inn</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('vote-form');
+            if (!form) {
+                return;
+            }
+            const modal = document.getElementById('voteConfirmModal');
+            const confirmBtn = document.getElementById('confirmVoteBtn');
+            const cancelBtn = document.getElementById('cancelVoteBtn');
+            const partyLabel = document.getElementById('voteConfirmParty');
+
+            const hideModal = () => {
+                modal.classList.remove('show');
+            };
+
+            const showModal = (partyName) => {
+                partyLabel.textContent = partyName;
+                modal.classList.add('show');
+            };
+
+            form.addEventListener('submit', (event) => {
+                if (form.dataset.voteConfirmed === 'true') {
+                    form.dataset.voteConfirmed = 'false';
+                    return;
+                }
+
+                const selected = form.querySelector('input[name="party"]:checked');
+                if (!selected) {
+                    return;
+                }
+
+                event.preventDefault();
+                showModal(selected.value);
+            });
+
+            confirmBtn?.addEventListener('click', () => {
+                form.dataset.voteConfirmed = 'true';
+                hideModal();
+                form.requestSubmit();
+            });
+
+            cancelBtn?.addEventListener('click', () => {
+                hideModal();
+            });
+
+            modal?.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    hideModal();
+                }
+            });
+        });
+    </script>
+}
