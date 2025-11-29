@@ -136,6 +136,29 @@ namespace WebApplication1.Controllers
 
         public IActionResult Privacy() => View();
 
+        public async Task<IActionResult> Contact()
+        {
+            var model = new ContactViewModel
+            {
+                IsLoggedIn = User.Identity?.IsAuthenticated ?? false,
+                FullName = User.Identity?.Name,
+                Email = User.FindFirst(ClaimTypes.Email)?.Value
+            };
+
+            if (model.IsLoggedIn)
+            {
+                var bankIdUuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(bankIdUuid))
+                {
+                    var dbUser = await _context.Users.AsNoTracking()
+                        .FirstOrDefaultAsync(u => u.BankIdUuid == bankIdUuid);
+                    model.Kommune = dbUser?.Kommune;
+                }
+            }
+
+            return View(model);
+        }
+
         [Authorize]
         public IActionResult Protected() => View();
 

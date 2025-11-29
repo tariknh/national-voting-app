@@ -1,67 +1,164 @@
-@using Microsoft.AspNetCore.Http
-@inject IHttpContextAccessor HttpContextAccessor
+@model WebApplication1.Models.VoteViewModel
 
 @{
-    ViewData["Title"] = "Stortingsvalg 2025 – Digital Valgportal";
-
-    var navn = ViewBag.UserFullName as string ?? "Velger";
-    var parties = ViewBag.Parties as List<string> ?? new List<string>();
-    var message = TempData["VoteMessage"] as string;
+    ViewData["Title"] = "Stortingsvalg 2025";
+    var displayName = string.IsNullOrWhiteSpace(Model.FullName) ? "Velger" : Model.FullName;
 }
 
-<section class="ds-container mx-auto max-w-3xl py-10 min-h-screen">
-    <div class="ds-card shadow-md border border-gray-200 rounded-lg p-8 bg-white w-full h-auto">
-
-
-
-    <header class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Stortingsvalg 2025</h1>
-            <p class="text-gray-600">Velkommen, <strong>@navn</strong> 👋 Du kan avgi din stemme til årets stortingsvalg her.</p>
-        </header>
-
-        @if (!string.IsNullOrEmpty(message))
-        {
-            <div class="ds-alert ds-alert--success mb-6">
-                <strong>@message</strong>
-            </div>
+@section Styles {
+    <style>
+        .vote-hero {
+            background: #00205b;
+            color: #fff;
+            border-radius: 12px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
         }
 
-        <div class="ds-card__section mb-8">
-            <h2 class="text-xl font-semibold mb-3 text-gray-800">Slik fungerer det</h2>
-            <ol class="list-decimal list-inside text-gray-700 leading-relaxed">
-                <li>Velg partiet du ønsker å stemme på.</li>
-                <li>Bekreft valget ditt ved å trykke “Avgi stemme”.</li>
-                <li>Etter innsending blir stemmen registrert og låst.</li>
-            </ol>
+        .vote-chip {
+            display: inline-flex;
+            gap: 0.5rem;
+            align-items: center;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.2);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .vote-card {
+            border: 1px solid #dfe3ec;
+            border-radius: 12px;
+            padding: 1.75rem;
+            background: #fff;
+        }
+
+        .vote-card--muted {
+            background: #f6f8fb;
+        }
+
+        .vote-section-title {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #4e596d;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+        }
+
+        .vote-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .vote-option {
+            border: 1px solid #e3e7f0;
+            border-radius: 10px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9fafc;
+        }
+
+        .vote-option input[type="radio"] {
+            accent-color: #00205b;
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+
+        .vote-alert {
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            background: #fef9e6;
+            border: 1px solid #f3dd9c;
+            color: #4e3b00;
+        }
+
+        .valg-link {
+            color: #0056b4;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+    </style>
+}
+
+<div class="container py-5">
+    <section class="vote-hero">
+        <span class="vote-chip">Stortingsvalg 2025</span>
+        <h1 class="mt-3 mb-2">Hei @displayName</h1>
+        <p class="lead mb-4">
+            Du er logget inn og kan levere stemmen din digitalt. Følg stegene, velg parti og signer for å motta kvittering.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+            <p class="mb-0">Kommune registrert: <strong>@(Model.Kommune ?? "Ukjent")</strong></p>
+            <span class="text-white-75">Status: @(Model.HasVoted ? "Allerede stemt" : "Ikke stemt ennå")</span>
         </div>
+    </section>
 
-        <form asp-action="SubmitVote" method="post" class="ds-card__section">
-            <h2 class="text-xl font-semibold mb-4 text-gray-800">Velg ditt parti</h2>
+    @if (!string.IsNullOrEmpty(Model.StatusMessage))
+    {
+        <div class="vote-alert mb-4" role="alert">
+            @Model.StatusMessage
+        </div>
+    }
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4
-">
-                @foreach (var party in parties)
+    <div class="row gy-4">
+        <div class="col-lg-8">
+            <div class="vote-card mb-4">
+                <p class="vote-section-title">Slik stemmer du</p>
+                <ol class="ps-3">
+                    <li>Velg partiet ditt nedenfor.</li>
+                    <li>Kontroller at informasjonen stemmer.</li>
+                    <li>Send inn stemmen og motta kvittering.</li>
+                </ol>
+            </div>
+
+            <div class="vote-card">
+                <p class="vote-section-title">Velg parti</p>
+
+                @if (Model.HasVoted)
                 {
-                    <label for="@party" class="block border border-gray-200 rounded-lg p-4 hover:border-blue-500 transition-all duration-200 cursor-pointer bg-gray-50 hover:bg-white">
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-900 font-medium">@party</span>
-                            <input type="radio" id="@party" name="party" value="@party" required class="accent-blue-600 scale-125" />
+                    <p class="mb-0">Du har allerede avgitt stemmen din. Kontakt støtte dersom du trenger å trekke den tilbake.</p>
+                }
+                else
+                {
+                    <form asp-action="SubmitVote" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="vote-grid">
+                            @foreach (var party in Model.Parties)
+                            {
+                                <label class="vote-option" for="party-@party.Replace(" ", "-")">
+                                    <span class="fw-semibold">@party</span>
+                                    <input type="radio" id="party-@party.Replace(" ", "-")" name="party" value="@party" required />
+                                </label>
+                            }
                         </div>
-                    </label>
+
+                        <div class="d-flex flex-wrap gap-3 align-items-center mt-4">
+                            <a asp-controller="Home" asp-action="Index" class="valg-link">← Tilbake til forsiden</a>
+                            <button type="submit" class="btn-idporten btn btn-lg fw-semibold ms-auto">Avgi stemme</button>
+                        </div>
+                    </form>
                 }
             </div>
+        </div>
 
-            <div class="mt-8 flex items-center">
-                <a asp-controller="Home" asp-action="Index" class="ds-link text-blue-700 hover:underline">
-                    ← Tilbake til forsiden
-                </a>
-
-                <button type="submit" class="btn-primary px-6 py-2 rounded-md shadow-sm ml-auto">
-                    Avgi stemme
-                </button>
+        <div class="col-lg-4">
+            <div class="vote-card vote-card--muted mb-4">
+                <p class="vote-section-title">Status</p>
+                <p class="mb-1"><strong>Kommune:</strong> @(Model.Kommune ?? "Ukjent")</p>
+                <p class="mb-1"><strong>Stemmegivning:</strong> @(Model.HasVoted ? "Fullført" : "Ikke sendt" )</p>
+                <p class="mb-0 text-muted">Du kan trekke stemmen tilbake frem til fristen.</p>
             </div>
 
-
-        </form> 
+            <div class="vote-card">
+                <p class="vote-section-title">Trenger du hjelp?</p>
+                <p>Ring valgveiledning på <a href="tel:+4780008080">800 08 080</a> eller send en e-post til <a href="mailto:valg@brukerstotte.no">valg@brukerstotte.no</a>.</p>
+                <p class="mb-0 small text-muted">Åpen alle dager 08–22. Tegnspråktolk man–fre 10–18.</p>
+            </div>
+        </div>
     </div>
-</section>
+</div>

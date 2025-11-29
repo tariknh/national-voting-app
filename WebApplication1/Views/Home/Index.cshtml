@@ -4,79 +4,340 @@
     ViewData["Title"] = "Digital Valgportal for Norge";
 }
 
-<div class="ds-card">
+@section Styles {
+    <style>
+        .valg-hero {
+            background-color: #00205b;
+            color: #fff;
+            border-radius: 12px;
+            padding: 2.75rem;
+        }
 
+        .valg-hero--muted {
+            background-color: #f2f5fb;
+            color: #00205b;
+        }
+
+        .valg-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.85rem;
+            font-size: 0.85rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            border-radius: 999px;
+            background-color: rgba(255, 255, 255, 0.16);
+        }
+
+        .valg-chip--dark {
+            background-color: rgba(0, 32, 91, 0.12);
+            color: #00205b;
+        }
+
+        .valg-section {
+            margin-bottom: 3rem;
+        }
+
+        .valg-section-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #4e596d;
+            margin-bottom: 0.35rem;
+            font-weight: 600;
+        }
+
+        .valg-card {
+            background: #fff;
+            border: 1px solid #dfe3ec;
+            border-radius: 12px;
+            padding: 1.75rem;
+        }
+
+        .valg-card--muted {
+            background: #f6f8fb;
+        }
+
+        .valg-step-list {
+            list-style: none;
+            counter-reset: steg;
+            padding-left: 0;
+            margin-bottom: 0;
+        }
+
+        .valg-step-list li {
+            counter-increment: steg;
+            margin-bottom: 1.5rem;
+            padding-left: 3rem;
+            position: relative;
+        }
+
+        .valg-step-list li::before {
+            content: counter(steg);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            border: 1px solid #00205b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #00205b;
+            background: #fff;
+        }
+
+        .valg-list {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
+        }
+
+        .valg-list li {
+            border-top: 1px solid #eceff5;
+            padding: 0.9rem 0;
+        }
+
+        .valg-list li:first-child {
+            border-top: 0;
+        }
+
+        .valg-timeline {
+            border-left: 2px solid #dfe3ec;
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .valg-meta {
+            font-size: 0.85rem;
+            color: #4e596d;
+        }
+
+        .valg-support-card {
+            background: #001b3f;
+            color: #fff;
+            border-radius: 12px;
+            padding: 1.75rem;
+        }
+
+        .valg-support-card a {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .valg-link {
+            color: #0056b4;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        @@media (max-width: 767px) {
+            .valg-hero {
+                padding: 2rem;
+            }
+
+            .valg-step-list li {
+                padding-left: 2.5rem;
+            }
+        }
+    </style>
+}
+
+<div class="container py-5">
     @if (!Model.IsLoggedIn)
     {
-        <!-- Logged-out view -->
-        <h1>Digital valgportal for Norge</h1>
-        <div class="ds-alert">
-            For bedre lesbarhet kan du aktivere
-            <a href="#" class="text-primary">tilgjengelighetsmodus</a>
-            med større tekst og høy kontrast.
-        </div>
+        <section class="valg-hero mb-5">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <span class="valg-chip">Stortingsvalg 2025</span>
+                <div class="text-white-75 small">
+                    <span class="me-2">Språk</span>
+                    <a href="#" class="text-white text-decoration-underline me-2">NO</a>
+                    <a href="#" class="text-white text-decoration-underline me-2">EN</a>
+                    <a href="#" class="text-white text-decoration-underline">NN</a>
+                </div>
+            </div>
+            <h1 class="mt-3">Stem digitalt med ID-porten</h1>
+            <p class="lead mb-4">
+                Portalen følger retningslinjene i Designsystemet og gir en rolig, forutsigbar opplevelse for alle valg.
+                Logg inn, bekreft identiteten din og lever stemmen din med samme sikkerhet som i valglokalet.
+            </p>
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+                <a asp-controller="Home" asp-action="Login" class="btn-idporten btn btn-lg fw-semibold">
+                    Logg inn med ID-porten
+                </a>
+                <a href="#prosessen" class="text-white text-decoration-underline fw-semibold">Se prosessen</a>
+            </div>
+            <div class="row row-cols-1 row-cols-md-3 gy-3 mt-4 text-white-75">
+                <div class="col">
+                    <p class="valg-section-title text-white-50 mb-1">Neste frist</p>
+                    <p class="mb-0 text-white fw-semibold">10. september kl. 23:59</p>
+                </div>
+                <div class="col">
+                    <p class="valg-section-title text-white-50 mb-1">Støttede e-ID</p>
+                    <p class="mb-0">BankID, MinID, Buypass, Commfides</p>
+                </div>
+                <div class="col">
+                    <p class="valg-section-title text-white-50 mb-1">Brukerstøtte</p>
+                    <p class="mb-0">Åpen 08–22 alle dager</p>
+                </div>
+            </div>
+        </section>
 
-        <p class="text-end">
-            <a href="#">EN</a> | <a href="#">NN</a>
-        </p>
+        <section id="prosessen" class="valg-section">
+            <div class="row gy-4">
+                <div class="col-lg-8">
+                    <div class="valg-card h-100">
+                        <p class="valg-section-title">Steg for steg</p>
+                        <h2 class="h4 mb-4">Slik avgir du stemme digitalt</h2>
+                        <ol class="valg-step-list">
+                            <li>
+                                <strong>Logg inn via ID-porten</strong>
+                                <p class="mb-2">Velg e-ID og identifiser deg. Portalen henter kommunen og riktig stemmeseddel for deg.</p>
+                                <span class="valg-meta">Tilgjengelig for skjermleser og tastaturnavigasjon.</span>
+                            </li>
+                            <li>
+                                <strong>Gå gjennom valgkortet</strong>
+                                <p class="mb-2">Se partier, kandidater og eventuelle forhåndsmerkinger. Du kan lese programinformasjon før du velger.</p>
+                                <span class="valg-meta">Valgkortet er skrevet med klarspråk og følger språkkravene.</span>
+                            </li>
+                            <li>
+                                <strong>Signer og send inn</strong>
+                                <p class="mb-2">Signér digitalt og få kvittering på e-post eller SMS. Du kan spore mottak helt til stemmen er registrert.</p>
+                                <span class="valg-meta">Kvitteringen oppbevares i 7 dager før den anonymiseres.</span>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="valg-card h-100">
+                        <p class="valg-section-title">Hva du trenger</p>
+                        <h3 class="h5">Forbered dette</h3>
+                        <ul class="valg-list mt-3 text-muted">
+                            <li><strong>Gyldig elektronisk ID</strong> – BankID, MinID, Buypass eller Commfides.</li>
+                            <li><strong>Oppdatert kontaktinformasjon</strong> – for kvittering og påminnelser.</li>
+                            <li><strong>Rolig sted</strong> – skjerm stemmen din hvis du deler utstyr.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        <h2>Velkommen til den digitale valgportalen</h2>
-        <p>
-            Her kan du trygt og enkelt avgi din stemme digitalt.
-            Du logger inn med ID-porten, og systemet finner automatisk
-            hvilken kommune du tilhører.
-        </p>
-
-        <a asp-controller="Home" asp-action="Login" class="btn-idporten">
-            Logg inn med ID-porten
-        </a>
-
-        <h3 class="mt-4">Hva du trenger</h3>
-        <ul>
-            <li>Gyldig elektronisk ID (BankID, MinID, Buypass eller Commfides)</li>
-            <li>Registrert bosted i Norge</li>
-        </ul>
-
-        <h3>Om løsningen</h3>
-        <p>
-            Den digitale valgportalen er utviklet for å gjøre stemmegivning
-            mer tilgjengelig for alle, uavhengig av alder eller teknisk erfaring.
-        </p>
+        <section class="valg-section">
+            <div class="row gy-4">
+                <div class="col-lg-6">
+                    <div class="valg-card valg-card--muted h-100">
+                        <p class="valg-section-title">Sikkerhet og personvern</p>
+                        <h3 class="h5">Bygd på offentlige krav</h3>
+                        <ul class="valg-list text-muted small mt-3">
+                            <li><strong>Revisjon</strong>: Tredjepartsrevisjon hvert kvartal fra Valgdirektoratet.</li>
+                            <li><strong>Åpenhet</strong>: Offentlige driftsrapporter og hendelseslogger publiseres ukentlig.</li>
+                            <li><strong>Tilgjengelighet</strong>: WCAG 2.1 AA, støtte for mørk modus og tegnspråktolk.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="valg-support-card h-100">
+                        <p class="valg-section-title text-white-50 mb-1">Trenger du hjelp?</p>
+                        <h3 class="h5 text-white">Kontakt valgveiledere</h3>
+                        <p class="mb-3">Vi svarer mellom 08–22 gjennom hele valgsperioden, også i helgene.</p>
+                        <p class="mb-1"><a href="tel:+4780008080">Ring 800 08 080</a></p>
+                        <p class="mb-1"><a href="mailto:valg@brukerstotte.no">valg@brukerstotte.no</a></p>
+                        <p class="small mb-0">Chat på tegnspråk er tilgjengelig man–fre 10–18.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
     }
     else
     {
-        <!-- Logged-in view -->
-        <h1>Velkommen tilbake, @Model.FullName</h1>
+        <section class="valg-hero valg-hero--muted mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <span class="valg-chip valg-chip--dark">Innlogget via ID-porten</span>
+                <p class="mb-0 small">Kommune registrert: <strong>@Model.Kommune</strong></p>
+            </div>
+            <h1 class="mt-3">Hei @Model.FullName</h1>
+            <p class="lead text-body">
+                Du er autentisert og klar til å avgi stemme digitalt. Nedenfor finner du valgkort, frister og logg
+                over hva som er gjort i portalen så langt.
+            </p>
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+                <a asp-controller="Vote" asp-action="National" class="btn-idporten btn btn-lg fw-semibold">
+                    Fortsett til stemmeseddel
+                </a>
+                <a asp-controller="Map" asp-action="Index" class="valg-link">Finn fysisk valglokasjon</a>
+            </div>
+        </section>
 
-        <div class="ds-alert ds-alert--success">
-            Du er logget inn via ID-porten. Systemet har funnet din kommune:
-            <strong>@Model.Kommune</strong>.
+        <div class="row gy-4">
+            <div class="col-lg-8">
+                <div class="valg-card mb-4">
+                    <p class="valg-section-title">Dine valg</p>
+                    <ul class="valg-list">
+                        <li class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                            <div>
+                                <strong>Kommunestyrevalg 2025</strong>
+                                <p class="mb-0 small text-muted">Gjelder @Model.Kommune</p>
+                            </div>
+                            <span class="badge bg-@(Model.HasVoted ? "success" : "warning") text-uppercase">
+                                @(Model.HasVoted ? "Allerede stemt" : "Ikke stemt ennå")
+                            </span>
+                        </li>
+                        <li class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                            <div>
+                                <strong>Stortingsvalg 2025</strong>
+                                <p class="mb-0 small text-muted">Åpner 15. august kl. 09:00</p>
+                            </div>
+                            <span class="badge bg-info text-dark text-uppercase">Ikke åpnet</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="valg-card">
+                    <p class="valg-section-title">Aktivitetslogg</p>
+                    <div class="valg-timeline">
+                        <strong>ID-verifisering fullført</strong>
+                        <span class="valg-meta">2. august kl. 09:42</span>
+                    </div>
+                    <div class="valg-timeline">
+                        <strong>Valgkort åpnet</strong>
+                        <span class="valg-meta">2. august kl. 09:44</span>
+                    </div>
+                    <div class="valg-timeline mb-0">
+                        <strong>Kvittering tilgjengelig</strong>
+                        <span class="valg-meta">Genereres umiddelbart etter innsending</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="valg-card mb-4">
+                    <p class="valg-section-title">Status</p>
+                    <h3 class="h6">Digital forhåndsstemming</h3>
+                    <p class="mb-1">Frist 10. september kl. 23:59</p>
+                    <p class="mb-0 text-muted">@(Model.HasVoted ? "Kvittering sendt til din innboks" : "Du har ikke levert stemme ennå")</p>
+                </div>
+                <div class="valg-card mb-4">
+                    <p class="valg-section-title">Din profil</p>
+                    <ul class="list-unstyled mb-3 text-muted small">
+                        <li class="mb-2"><strong>Navn:</strong> @Model.FullName</li>
+                        <li class="mb-2"><strong>Fødselsnummer:</strong> @Model.Fodselsnr</li>
+                        <li class="mb-2"><strong>E-post:</strong> @Model.Email</li>
+                        <li class="mb-2"><strong>Telefon:</strong> @Model.Phone</li>
+                        <li class="mb-0"><strong>Kommune:</strong> @Model.Kommune</li>
+                    </ul>
+                    <a asp-controller="Home" asp-action="Logout" class="btn btn-outline-danger w-100">Logg ut</a>
+                </div>
+                <div class="valg-support-card">
+                    <p class="valg-section-title text-white-50 mb-1">Hjelp</p>
+                    <h3 class="h6 text-white">Trenger du støtte?</h3>
+                    <p class="mb-2">Ta kontakt med valgveileder for å få bekreftet status eller trekke tilbake en stemme.</p>
+                    <p class="mb-1"><a href="tel:+4780008080">800 08 080</a></p>
+                    <p class="mb-0"><a href="mailto:valg@brukerstotte.no">valg@brukerstotte.no</a></p>
+                </div>
+            </div>
         </div>
-
-        <section class="ds-card__section">
-            <h2>Dine valg</h2>
-            <p>Her kan du se tilgjengelige valg og status for stemmegivning.</p>
-            <ul class="ds-list">
-                <li>
-                    <a href="/Vote/Local" class="ds-link">Kommunestyrevalg 2025</a> – 
-                    @(Model.HasVoted ? "Allerede stemt" : "Ikke stemt ennå")
-                </li>
-                <li>
-                    <a href="/Vote/National" class="ds-link">Stortingsvalg 2025</a> – Åpner 15. august
-                </li>
-            </ul>
-        </section>
-
-        <section class="ds-card__section">
-            <h2>Din profil</h2>
-            <ul>
-                <li><strong>Navn:</strong> @Model.FullName</li>
-                <li><strong>Fødselsnummer / ID:</strong> @Model.Fodselsnr</li>
-                <li><strong>Email:</strong> @Model.Email</li>
-                <li><strong>Telefon:</strong> @Model.Phone</li>
-                <li><strong>Kommune:</strong> @Model.Kommune</li>
-            </ul>
-            <a asp-controller="Home" asp-action="Logout" class="ds-link text-danger">Logg ut</a>
-        </section>
     }
 </div>
