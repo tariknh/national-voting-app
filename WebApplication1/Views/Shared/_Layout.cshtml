@@ -17,6 +17,8 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/WebApplication1.styles.css" asp-append-version="true" />
 
+    @await RenderSectionAsync("Styles", required: false)
+
     <!-- Accessibility meta -->
     <meta name="theme-color" content="#00205b" />
 </head>
@@ -39,6 +41,7 @@
                     <li><a asp-controller="Home" asp-action="Index">Hjem</a></li>
                     <li><a asp-controller="Map" asp-action="Index">Valgkart</a></li>
                     <li><a asp-controller="Home" asp-action="Privacy">Personvern</a></li>
+                    <li><a asp-controller="Home" asp-action="Contact">Kontakt</a></li>
                     <li><a asp-controller="Home" asp-action="Accessibility">Tilgjengelighet</a></li>
                     
                 </ul>
@@ -70,6 +73,7 @@
             <p class="mb-1">&copy; 2025 - Digital Valgportal</p>
             <p class="small">
                 <a asp-controller="Home" asp-action="Privacy">Personvern</a> |
+                <a asp-controller="Home" asp-action="Contact">Kontakt</a> |
                 <a asp-controller="Home" asp-action="Accessibility">Tilgjengelighet</a> |
                 <a href="mailto:valg@valg.no">Kontakt oss</a>
             </p>

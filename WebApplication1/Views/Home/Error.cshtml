@@ -1,0 +1,104 @@
+﻿@model ErrorViewModel
+
+@{
+    ViewData["Title"] = "Noe gikk galt";
+}
+
+@section Styles {
+    <style>
+        .error-hero {
+            background: #f6f8fb;
+            border: 1px solid #e3e7f0;
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .error-hero h1 {
+            margin-bottom: 0.5rem;
+        }
+
+        .error-card {
+            border: 1px solid #dfe3ec;
+            border-radius: 12px;
+            padding: 1.75rem;
+            background: #fff;
+        }
+
+        .error-section-title {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #4e596d;
+            margin-bottom: 0.35rem;
+            font-weight: 600;
+        }
+
+        .error-list {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
+        }
+
+        .error-list li {
+            border-top: 1px solid #eceff5;
+            padding: 0.85rem 0;
+        }
+
+        .error-list li:first-child {
+            border-top: 0;
+        }
+
+        .error-support {
+            background: #001b3f;
+            color: #fff;
+        }
+
+        .valg-link {
+            color: #0056b4;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+    </style>
+}
+
+<div class="container py-5">
+    <section class="error-hero">
+        <p class="error-section-title">Digital valgportal</p>
+        <h1>Beklager, noe gikk galt</h1>
+        <p class="mb-0">Vi jobber med å løse feilen. Prøv igjen om litt, eller bruk alternativene nedenfor for å komme videre.</p>
+    </section>
+
+    <div class="row gy-4">
+        <div class="col-lg-7">
+            <div class="error-card mb-4">
+                <p class="error-section-title">Dette kan du gjøre</p>
+                <ul class="error-list">
+                    <li>Oppdater siden og prøv på nytt etter noen sekunder.</li>
+                    <li>Gå tilbake til <a asp-controller="Home" asp-action="Index" class="valg-link">forsiden</a>.</li>
+                    <li>Sjekk at lenken du brukte er riktig, eller skriv inn nettadressen på nytt.</li>
+                </ul>
+            </div>
+
+            @if (Model?.ShowRequestId == true)
+            {
+                <div class="error-card">
+                    <p class="error-section-title">Teknisk informasjon</p>
+                    <p>Request ID: <code>@Model.RequestId</code></p>
+                    <p class="mb-0">Oppgi denne koden dersom du kontakter brukerstøtte.</p>
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-5">
+            <div class="error-card error-support h-100">
+                <p class="error-section-title text-white-50">Trenger du hjelp?</p>
+                <h2 class="h5 text-white">Kontakt brukerstøtte</h2>
+                <p class="mb-3">Vi svarer mellom 08–22 alle dager, også i helgen.</p>
+                <p class="mb-1"><a href="tel:+4780008080" class="text-white fw-semibold">Ring 800 08 080</a></p>
+                <p class="mb-1"><a href="mailto:valg@brukerstotte.no" class="text-white">valg@brukerstotte.no</a></p>
+                <p class="small mb-0">Tegnspråkchat man–fre 10–18.</p>
+            </div>
+        </div>
+    </div>
+</div>
