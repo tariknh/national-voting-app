@@ -63,7 +63,19 @@ builder.Services.AddAuthentication(options =>
     options.Authority = $"https://{builder.Configuration["Criipto:Domain"]}/";
     options.ResponseType = "code";
 
-    options.CallbackPath = new PathString("/signin-oidc");
+    var configuredRedirect = builder.Configuration["Criipto:RedirectUri"];
+    var configuredLogoutRedirect = builder.Configuration["Criipto:PostLogoutRedirectUri"];
+
+    if (!string.IsNullOrEmpty(configuredRedirect))
+    {
+        var callbackPath = new PathString(new Uri(configuredRedirect).AbsolutePath);
+        options.CallbackPath = callbackPath;
+    }
+    else
+    {
+        options.CallbackPath = new PathString("/signin-oidc");
+    }
+
     options.SignedOutCallbackPath = "/signout";
 
     options.Scope.Add("openid");
@@ -80,73 +92,87 @@ builder.Services.AddAuthentication(options =>
     options.ClaimActions.MapUniqueJsonKey("phone_number", "phone_number");
 
     options.Events = new OpenIdConnectEvents
-{
-    OnTokenValidated = context =>
     {
-        // --- Step 1: Log the incoming claims for debugging ---
-        Console.WriteLine($"✅ Token validated for {context.Principal.Identity?.Name}");
-        foreach (var claim in context.Principal.Claims)
+        OnTokenValidated = context =>
         {
-            Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
-        }
-
-        // --- Step 2: Normalize provider-specific claims to .NET standard claims ---
-        if (context.Principal.Identity is ClaimsIdentity identity)
-        {
-            var subClaim = identity.FindFirst("sub"); // OIDC standard subject claim
-            if (subClaim != null && !identity.HasClaim(c => c.Type == ClaimTypes.NameIdentifier))
+            // --- Step 1: Log the incoming claims for debugging ---
+            var principalName = context.Principal?.Identity?.Name ?? "(ukjent bruker)";
+            Console.WriteLine($"✅ Token validated for {principalName}");
+            foreach (var claim in context.Principal?.Claims ?? Array.Empty<Claim>())
             {
-                identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, subClaim.Value));
-                Console.WriteLine($"✅ Mapped 'sub' claim to '{ClaimTypes.NameIdentifier}'");
+                Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
             }
-            // Find the 'givenname' claim from the provider
-            var givenNameClaim = identity.FindFirst("givenname");
-            if (givenNameClaim != null)
+
+            // --- Step 2: Normalize provider-specific claims to .NET standard claims ---
+            if (context.Principal?.Identity is ClaimsIdentity identity)
             {
-                // If the standard GivenName claim doesn't exist, add it
-                if (!identity.HasClaim(c => c.Type == ClaimTypes.GivenName))
+                var subClaim = identity.FindFirst("sub"); // OIDC standard subject claim
+                if (subClaim != null && !identity.HasClaim(c => c.Type == ClaimTypes.NameIdentifier))
                 {
-                    identity.AddClaim(new Claim(ClaimTypes.GivenName, givenNameClaim.Value));
-                    Console.WriteLine($"✅ Added standard claim: {ClaimTypes.GivenName} = {givenNameClaim.Value}");
+                    identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, subClaim.Value));
+                    Console.WriteLine($"✅ Mapped 'sub' claim to '{ClaimTypes.NameIdentifier}'");
+                }
+                // Find the 'givenname' claim from the provider
+                var givenNameClaim = identity.FindFirst("givenname");
+                if (givenNameClaim != null)
+                {
+                    // If the standard GivenName claim doesn't exist, add it
+                    if (!identity.HasClaim(c => c.Type == ClaimTypes.GivenName))
+                    {
+                        identity.AddClaim(new Claim(ClaimTypes.GivenName, givenNameClaim.Value));
+                        Console.WriteLine($"✅ Added standard claim: {ClaimTypes.GivenName} = {givenNameClaim.Value}");
+                    }
+                }
+
+                // Find the 'surname' claim from the provider
+                var surnameClaim = identity.FindFirst("surname");
+                if (surnameClaim != null)
+                {
+                    // If the standard Surname claim doesn't exist, add it
+                    if (!identity.HasClaim(c => c.Type == ClaimTypes.Surname))
+                    {
+                        identity.AddClaim(new Claim(ClaimTypes.Surname, surnameClaim.Value));
+                        Console.WriteLine($"✅ Added standard claim: {ClaimTypes.Surname} = {surnameClaim.Value}");
+                    }
                 }
             }
+            
+            return Task.CompletedTask;
+        },
 
-            // Find the 'surname' claim from the provider
-            var surnameClaim = identity.FindFirst("surname");
-            if (surnameClaim != null)
+        OnRedirectToIdentityProvider = context =>
+        {
+            if (!string.IsNullOrEmpty(configuredRedirect))
             {
-                // If the standard Surname claim doesn't exist, add it
-                if (!identity.HasClaim(c => c.Type == ClaimTypes.Surname))
-                {
-                    identity.AddClaim(new Claim(ClaimTypes.Surname, surnameClaim.Value));
-                    Console.WriteLine($"✅ Added standard claim: {ClaimTypes.Surname} = {surnameClaim.Value}");
-                }
+                context.ProtocolMessage.RedirectUri = configuredRedirect;
             }
+            Console.WriteLine("Redirecting to Criipto...");
+            return Task.CompletedTask;
+        },
+
+        OnRedirectToIdentityProviderForSignOut = context =>
+        {
+            if (!string.IsNullOrEmpty(configuredLogoutRedirect))
+            {
+                context.ProtocolMessage.PostLogoutRedirectUri = configuredLogoutRedirect;
+            }
+            return Task.CompletedTask;
+        },
+
+        OnAuthorizationCodeReceived = context =>
+        {
+            Console.WriteLine("Auth code received");
+            return Task.CompletedTask;
+        },
+
+        OnRemoteFailure = context =>
+        {
+            Console.WriteLine($"❌ OIDC Error: {context.Failure?.Message}");
+            context.HandleResponse();
+            context.Response.Redirect("/Home/Error");
+            return Task.CompletedTask;
         }
-        
-        return Task.CompletedTask;
-    },
-
-    OnRedirectToIdentityProvider = context =>
-    {
-        Console.WriteLine("Redirecting to Criipto...");
-        return Task.CompletedTask;
-    },
-
-    OnAuthorizationCodeReceived = context =>
-    {
-        Console.WriteLine("Auth code received");
-        return Task.CompletedTask;
-    },
-
-    OnRemoteFailure = context =>
-    {
-        Console.WriteLine($"❌ OIDC Error: {context.Failure?.Message}");
-        context.HandleResponse();
-        context.Response.Redirect("/Home/Error");
-        return Task.CompletedTask;
-    }
-};
+    };
 });
 var app = builder.Build();
 
