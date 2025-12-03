@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Models;
 
@@ -10,17 +11,20 @@ public class ApplicationDbContext : IdentityDbContext
         : base(options)
     {
     }
-    
     public DbSet<User> Users { get; set; }
     public DbSet<Stemmer> Stemmers { get; set; }
-    public DbSet<Vertifikasjon> Vertifikasjons { get; set; }  // Legg til denne
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Ignore<IdentityUser>();
 
         modelBuilder.Entity<User>().ToTable("users");
         modelBuilder.Entity<Stemmer>().ToTable("stemmer");
-        modelBuilder.Entity<Vertifikasjon>().ToTable("verifikasjon");  // Legg til denne
+        
+        modelBuilder.Entity<User>()
+            .Property(u => u.BankIdUuid)
+            .HasColumnType("varchar(36)")  
+            .IsRequired(false);
     }
 }

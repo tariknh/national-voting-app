@@ -1,126 +1,184 @@
-// Controllers/VoteController.cs
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using WebApplication1.Data;
-using WebApplication1.Services;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
-using System;
+using WebApplication1.Data;
+using WebApplication1.Models;
 
 namespace WebApplication1.Controllers
 {
-    public class VoteController : Controller
-    {
-        private readonly ApplicationDbContext _context;
-        private readonly VotingTokenService _tokenService;
+	[Authorize]
+	public class VoteController : Controller
+	{
+		private readonly ApplicationDbContext _context;
 
-        public VoteController(
-            ApplicationDbContext context,
-            VotingTokenService tokenService)
-        {
-            _context = context;
-            _tokenService = tokenService;
-        }
+		private static readonly IReadOnlyList<string> Parties = new List<string>
+		{
+			"Arbeiderpartiet",
+			"Høyre",
+			"Senterpartiet",
+			"Fremskrittspartiet",
+			"Sosialistisk Venstreparti",
+			"Venstre",
+			"Kristelig Folkeparti",
+			"Rødt",
+			"Miljøpartiet De Grønne",
+			"Innsamslingspartiet",
+			"Partiet De Kristne",
+			"Demokratene",
+			"Liberalistene",
+			"Pensjonistpartiet",
+			"Kystpartiet",
+			"Alliansen",
+			"Norges Kommunistiske Parti",
+			"Piratpartiet",
+			"Helsepartiet",
+			"Folkestyret",
+			"Norsk Republikanse Allianse",
+			"Verdipartiet",
+			"Partiet Sentrum"
+		};
 
-        public IActionResult National()
-        {
-            var fodselsnr = HttpContext.Session.GetString("Fodselsnr");
-            var navn = HttpContext.Session.GetString("UserFullName");
+		public VoteController(ApplicationDbContext context)
+		{
+			_context = context;
+		}
 
-            if (string.IsNullOrEmpty(fodselsnr))
-            {
-                return RedirectToAction("Login", "Account");
-            }
+		public async Task<IActionResult> National()
+		{
+			var user = await GetCurrentUserAsync();
+			if (user == null)
+			{
+				TempData["VoteMessage"] = "Vi klarte ikke å finne brukeren. Logg inn på nytt.";
+				return RedirectToAction("Index", "Home");
+			}
 
-            var parties = new List<string>
-            {
-                "Arbeiderpartiet",
-                "Høyre",
-                "Senterpartiet",
-                "Fremskrittspartiet",
-                "Sosialistisk Venstreparti",
-                "Venstre",
-                "Kristelig Folkeparti",
-                "Rødt",
-                "Miljøpartiet De Grønne",
-                "Innsamslingspartiet",
-                "Partiet De Kristne",
-                "Demokratene",
-                "Liberalistene",
-                "Pensjonistpartiet",
-                "Kystpartiet",
-                "Alliansen",
-                "Norges Kommunistiske Parti",
-                "Piratpartiet",
-                "Helsepartiet",
-                "Folkestyret",
-                "Norsk Republikanse Allianse",
-                "Verdipartiet",
-                "Partiet Sentrum"
-            };
+			var model = new VoteViewModel
+			{
+				FullName = BuildFullName(user) ?? User.Identity?.Name,
+				Kommune = user.Kommune ?? "Ukjent",
+				HasVoted = user.HasVoted ?? false,
+				Parties = Parties,
+				StatusMessage = TempData["VoteMessage"] as string
+			};
 
-            ViewBag.Parties = parties;
-            ViewBag.UserFullName = navn;
+			return View(model);
+		}
 
-            return View();
-        }
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public async Task<IActionResult> SubmitVote(string party)
+		{
+			if (string.IsNullOrWhiteSpace(party))
+			{
+				TempData["VoteMessage"] = "Velg et parti før du sender inn.";
+				return RedirectToAction(nameof(National));
+			}
 
-        [HttpPost]
-        public async Task<IActionResult> SubmitVote(string party)
-        {
-            var fodselsnr = HttpContext.Session.GetString("Fodselsnr");
-            if (string.IsNullOrEmpty(fodselsnr))
-            {
-                return RedirectToAction("Login", "Account");
-            }
+			var user = await GetCurrentUserAsync();
+			if (user == null)
+			{
+				TempData["VoteMessage"] = "Økten din er utløpt. Logg inn igjen.";
+				return RedirectToAction("Login", "Home");
+			}
 
-            try
-            {
-                // 1. Konverter parti til int
-                int partiInt = PartyMapper.GetPartyId(party);
-                if (partiInt == -1)
-                {
-                    TempData["VoteMessage"] = "Ugyldig parti valgt.";
-                    return RedirectToAction("National");
-                }
+			if (user.HasVoted == true)
+			{
+				TempData["VoteMessage"] = "Du har allerede avgitt din stemme.";
+				return RedirectToAction(nameof(National));
+			}
 
-                // 2. Hent kommune
-                var kommune = HttpContext.Session.GetString("Kommune") ?? "Ukjent";
+			var kommune = string.IsNullOrWhiteSpace(user.Kommune) ? "Ukjent" : user.Kommune;
+			var stemme = await _context.Stemmers.FirstOrDefaultAsync(s => s.Kommune == kommune);
+			if (stemme == null)
+			{
+				stemme = new Stemmer { Kommune = kommune };
+				_context.Stemmers.Add(stemme);
+			}
 
-                // 3. Generer full token (markerer HasVoted=true)
-                string fullToken = await _tokenService.GenerateVotingToken(fodselsnr);
+			if (!IncrementPartyCounter(stemme, party))
+			{
+				TempData["VoteMessage"] = "Ugyldig parti valgt.";
+				return RedirectToAction(nameof(National));
+			}
 
-                // 4. Lagre stemme MED full token
-                await _tokenService.StoreVote(fullToken, partiInt, kommune);
+			user.HasVoted = true;
+			await _context.SaveChangesAsync();
 
-                TempData["VoteMessage"] = $"Stemmen din for {party} er registrert!";
-                return RedirectToAction("National");
-            }
-            catch (InvalidOperationException ex)
-            {
-                TempData["VoteMessage"] = ex.Message;
-                return RedirectToAction("National");
-            }
-            catch (Exception ex)
-            {
-                TempData["VoteMessage"] = "En feil oppstod ved stemmeregistrering.";
-                Console.WriteLine($"Voting error: {ex.Message}");
-                return RedirectToAction("National");
-            }
-        }
+			TempData["VoteMessage"] = $"Stemmen din for {party} i {kommune} er registrert.";
+			return RedirectToAction(nameof(National));
+		}
 
-        /// <summary>
-        /// Admin-funksjon: Verifiser alle stemmer etter valget
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> VerifyVotes()
-        {
-            // TODO: Legg til admin-autentisering her
-            
-            var result = await _tokenService.VerifyAllVotes();
-            
-            ViewBag.Result = result;
-            return View();
-        }
-    }
+		private async Task<User?> GetCurrentUserAsync()
+		{
+			var bankIdUuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			if (string.IsNullOrEmpty(bankIdUuid))
+			{
+				return null;
+			}
+
+			return await _context.Users.FirstOrDefaultAsync(u => u.BankIdUuid == bankIdUuid);
+		}
+
+		private static string? BuildFullName(User user)
+		{
+			var first = user.Firstname?.Trim();
+			var last = user.Lastname?.Trim();
+			if (string.IsNullOrEmpty(first) && string.IsNullOrEmpty(last))
+			{
+				return null;
+			}
+
+			if (string.IsNullOrEmpty(first))
+			{
+				return last;
+			}
+
+			if (string.IsNullOrEmpty(last))
+			{
+				return first;
+			}
+
+			return $"{first} {last}";
+		}
+
+		private static bool IncrementPartyCounter(Stemmer stemme, string party)
+		{
+			var normalized = party.Trim().ToLowerInvariant();
+			switch (normalized)
+			{
+				case "arbeiderpartiet": stemme.Ap++; break;
+				case "høyre": stemme.Hoyre++; break;
+				case "senterpartiet": stemme.Sp++; break;
+				case "fremskrittspartiet": stemme.Frp++; break;
+				case "sosialistisk venstreparti": stemme.Sv++; break;
+				case "venstre": stemme.Venstre++; break;
+				case "kristelig folkeparti": stemme.Krf++; break;
+				case "rødt": stemme.Rodt++; break;
+				case "miljøpartiet de grønne": stemme.Mdg++; break;
+				case "innsamslingspartiet": stemme.Inp++; break;
+				case "partiet de kristne": stemme.Pdk++; break;
+				case "demokratene": stemme.Demokratene++; break;
+				case "liberalistene": stemme.Liberalistene++; break;
+				case "pensjonistpartiet": stemme.Pensjonistpartiet++; break;
+				case "kystpartiet": stemme.Kystpartiet++; break;
+				case "alliansen": stemme.Alliansen++; break;
+				case "norges kommunistiske parti": stemme.Nkp++; break;
+				case "piratpartiet": stemme.Piratpartiet++; break;
+				case "helsepartiet": stemme.Helsepartiet++; break;
+				case "folkestyret": stemme.Folkestyret++; break;
+				case "norsk republikanse allianse": stemme.NorskRepublikanskAllianse++; break;
+				case "verdipartiet": stemme.Verdipartiet++; break;
+				case "partiet sentrum": stemme.PartietSentrum++; break;
+				default:
+					return false;
+			}
+
+			return true;
+		}
+	}
 }
+

@@ -1,10 +1,5 @@
 ﻿<link rel="stylesheet" href="~/css/map.css" />
 
-
-@{
-    ViewData["Title"] = "Valgkart Norge";
-}
-
 <div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col-12">
@@ -13,410 +8,63 @@
         </div>
     </div>
 
-    <!-- Legend Section -->
     <div class="row mb-4">
-        <div class="col-12">
-            <div class="stats-card">
-                <h5 class="mb-3">📊 Ledende parti per kommune</h5>
-                <div id="legend" class="d-flex flex-wrap"></div>
+        <div class="col-12 col-md-3">
+
+            <div class="valg-card" id="side-panel">
+                <p class="valg-section-title">🗺️ Søk kommune</p>
+                <div class="position-relative mb-3">
+                    <input type="text" id="municipality-search" class="form-control" placeholder="Søk etter kommune..." autocomplete="off">
+                    <div id="municipality-results" class="list-group position-absolute w-100 shadow-sm" style="z-index:1000; display:none;"></div>
+
+                </div>
+
+                <p class="valg-section-title mt-4">📊 Partioversikt</p>
+                <input type="text" id="party-search" class="form-control mb-3" placeholder="Søk parti..." />
+
+
+                <div id="legend" class="d-flex flex-column gap-2"></div>
             </div>
         </div>
-    </div>
 
-    <!-- Map Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="stats-card">
+
+        <div class="col-12 col-md-9">
+            <div class="valg-card">
                 <div id="loading">Laster kart...</div>
                 <div id="container"></div>
             </div>
         </div>
     </div>
 
-    <!-- Municipality Details Section -->
     <div class="row">
         <div class="col-12">
-            <div id="municipality-details" class="stats-card" style="display: none;">
-                <button class="btn btn-sm btn-secondary mb-3" onclick="closeDetails()">✕ Lukk</button>
+            <div id="municipality-details" class="valg-card" style="display: none;">
+                <button id="national-button" class="btn btn-sm btn-primary mb-3" onclick="mapApp.showNationalTotals()">
+                    Nasjonale resultater
+                </button>
+
+
                 <h4 id="detail-kommune" class="mb-3"></h4>
                 <div class="row">
                     <div class="col-md-6">
-                        <h6>📈 Resultater</h6>
+                        <p class="valg-section-title">📈 Resultater</p>
                         <div id="detail-results"></div>
+
                     </div>
                     <div class="col-md-6">
                         <canvas id="detail-chart" width="400" height="300"></canvas>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <!-- Highcharts Maps Libraries -->
     <script src="https://code.highcharts.com/maps/highmaps.js"></script>
     <script src="https://code.highcharts.com/maps/modules/exporting.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <script>
-        // Party configuration
-        const config = {
-            partyColors: {
-                'ap': '#e63946',
-                'hoyre': '#219ebc',
-                'sp': '#06a94d',
-                'frp': '#023e8a',
-                'sv': '#d62828',
-                'rodt': '#9d0208',
-                'venstre': '#38b000',
-                'krf': '#ffba08',
-                'mdg': '#2d6a4f',
-                'inp': '#99968d',
-                'pdk': '#99968d',
-                'demokratene': '#99968d',
-                'liberalistene': '#99968d',
-                'pensjonistpartiet': '#99968d',
-                'kystpartiet': '#99968d',
-                'alliansen': '#99968d',
-                'nkp': '#99968d',
-                'piratpartiet': '#99968d',
-                'helsepartiet': '#99968d',
-                'folkestyret': '#99968d',
-                'norsk_republikansk_allianse': '#99968d',
-                'verdipartiet': '#99968d',
-                'partiet_sentrum': '#99968d'
-            },
-
-            partyNames: {
-                'ap': 'Arbeiderpartiet',
-                'hoyre': 'Høyre',
-                'sp': 'Senterpartiet',
-                'frp': 'Fremskrittspartiet',
-                'sv': 'SV',
-                'rodt': 'Rødt',
-                'venstre': 'Venstre',
-                'krf': 'KrF',
-                'mdg': 'MDG',
-                'inp': 'INP',
-                'pdk': 'PDK',
-                'demokratene': 'Demokratene',
-                'liberalistene': 'Liberalistene',
-                'pensjonistpartiet': 'Pensjonistpartiet',
-                'kystpartiet': 'Kystpartiet',
-                'alliansen': 'Alliansen',
-                'nkp': 'NKP',
-                'piratpartiet': 'Piratpartiet',
-                'helsepartiet': 'Helsepartiet',
-                'folkestyret': 'Folkestyret',
-                'norsk_republikansk_allianse': 'Norsk Rep. Allianse',
-                'verdipartiet': 'Verdipartiet',
-                'partiet_sentrum': 'Partiet Sentrum'
-            }
-        };
-
-        let chartInstance = null;
-        let votingDataMap = {};
-        let currentMunicipalityData = null;
-
-        // Utility functions
-        function normalizeName(name) {
-            return name
-                .toLowerCase()
-                .trim()
-                .replace(/\s+kommune$/i, '')
-                .replace(/\s+/g, ' ');
-        }
-
-        function getLeadingParty(municipalityData) {
-            let maxVotes = 0;
-            let leadingParty = null;
-
-            Object.keys(config.partyColors).forEach(party => {
-                const votes = municipalityData[party] || 0;
-                if (votes > maxVotes) {
-                    maxVotes = votes;
-                    leadingParty = party;
-                }
-            });
-
-            return { party: leadingParty, votes: maxVotes };
-        }
-
-        function getTotalVotes(municipalityData) {
-            return Object.keys(config.partyColors).reduce((sum, party) => {
-                return sum + (municipalityData[party] || 0);
-            }, 0);
-        }
-
-        function getPartyVotes(municipalityData) {
-            return Object.keys(config.partyColors).map(party => ({
-                party: party,
-                name: config.partyNames[party],
-                votes: municipalityData[party] || 0,
-                color: config.partyColors[party]
-            })).filter(p => p.votes > 0).sort((a, b) => b.votes - a.votes);
-        }
-
-        // Create legend
-        function createLegend() {
-            const legend = document.getElementById('legend');
-            const mainParties = ['ap', 'hoyre', 'sp', 'frp', 'sv', 'rodt', 'venstre', 'krf', 'mdg'];
-
-            mainParties.forEach(partyKey => {
-                const item = document.createElement('div');
-                item.className = 'legend-item';
-                item.innerHTML = `
-                    <div class="legend-color" style="background-color: ${config.partyColors[partyKey]};"></div>
-                    <span><strong>${config.partyNames[partyKey]}</strong></span>
-                `;
-                legend.appendChild(item);
-            });
-        }
-
-        // Create the Highcharts map
-        async function createMap() {
-            try {
-                // Load voting data
-                const votingResponse = await fetch('/Map/GetVotingData');
-                const votingData = await votingResponse.json();
-
-                console.log('Voting data loaded:', votingData.length, 'municipalities');
-
-                // Create lookup map with normalized names
-                votingData.forEach(item => {
-                    const normalized = normalizeName(item.kommune);
-                    votingDataMap[normalized] = item;
-                    console.log('Registered:', item.kommune, '→', normalized);
-                });
-
-                // Load the Highcharts topology
-                const topology = await fetch(
-                    'https://code.highcharts.com/mapdata/countries/no/no-all-all.topo.json'
-                ).then(response => response.json());
-
-                console.log('Topology loaded');
-                document.getElementById('loading').style.display = 'none';
-
-                // Prepare data for Highcharts
-                // Format: [['hc-key', value, customData], ...]
-                const mapData = [];
-
-                // Get all features from topology to map hc-keys to municipality names
-                if (topology.objects && topology.objects.default) {
-                    const features = topology.objects.default.geometries;
-
-                    features.forEach(feature => {
-                        const hcKey = feature.properties['hc-key'];
-                        const municipalityName = feature.properties.name || '';
-                        const normalized = normalizeName(municipalityName);
-                        const data = votingDataMap[normalized];
-
-                        if (data) {
-                            const leading = getLeadingParty(data);
-                            mapData.push({
-                                'hc-key': hcKey,
-                                value: leading.votes,
-                                color: leading.party ? config.partyColors[leading.party] : '#cccccc',
-                                municipalityName: data.kommune,
-                                leadingParty: leading.party,
-                                municipalityData: data
-                            });
-                            console.log('Match:', municipalityName, '→', leading.party);
-                        } else {
-                            // No data for this municipality
-                            mapData.push({
-                                'hc-key': hcKey,
-                                value: 0,
-                                color: '#cccccc',
-                                municipalityName: municipalityName,
-                                leadingParty: null,
-                                municipalityData: null
-                            });
-                            console.log('No match for:', municipalityName);
-                        }
-                    });
-                }
-
-                // Create the Highcharts map
-                Highcharts.mapChart('container', {
-                    chart: {
-                        map: topology,
-                        backgroundColor: '#e8f4f8'
-                    },
-
-                    title: {
-                        text: 'Norges Valgkart',
-                        style: {
-                            fontSize: '24px',
-                            fontWeight: 'bold'
-                        }
-                    },
-
-                    subtitle: {
-                        text: 'Klikk på en kommune for detaljer'
-                    },
-
-                    mapNavigation: {
-                        enabled: true,
-                        buttonOptions: {
-                            verticalAlign: 'bottom'
-                        }
-                    },
-
-                    tooltip: {
-                        useHTML: true,
-                        formatter: function() {
-                            const point = this.point;
-                            if (point.municipalityData) {
-                                const leading = getLeadingParty(point.municipalityData);
-                                const partyName = leading.party ? config.partyNames[leading.party] : 'Ingen stemmer';
-                                return `<b>${point.municipalityName}</b><br/>
-                                        Leder: ${partyName}<br/>
-                                        Stemmer: ${leading.votes.toLocaleString()}`;
-                            }
-                            return `<b>${point.municipalityName}</b><br/>Ingen data`;
-                        }
-                    },
-                    
-                    colorAxis: {
-                        min: 0,
-                        minColor: '#E6E7E8',
-                        maxColor: '#005645'
-                    },
-
-                    series: [{
-                        data: mapData,
-                        name: 'Kommuner',
-                        states: {
-                            hover: {
-                                brightness: 0.2,
-                                borderColor: '#000000',
-                                borderWidth: 2
-                            }
-                        },
-                        dataLabels: {
-                            enabled: false
-                        },
-                        point: {
-                            events: {
-                                click: function() {
-                                    if (this.municipalityData) {
-                                        showMunicipalityDetails({
-                                            name: this.municipalityName,
-                                            data: this.municipalityData
-                                        });
-                                    }
-                                }
-                            }
-                        }
-                    }],
-
-                    credits: {
-                        enabled: false
-                    }
-                });
-
-            } catch (error) {
-                console.error('Error creating map:', error);
-                document.getElementById('container').innerHTML =
-                    '<div class="alert alert-danger m-3">Feil ved lasting av kart: ' + error.message + '</div>';
-            }
-        }
-
-        // Show municipality details
-        function showMunicipalityDetails(municipality) {
-            currentMunicipalityData = municipality;
-            const detailsDiv = document.getElementById('municipality-details');
-            const kommuneTitle = document.getElementById('detail-kommune');
-            const resultsDiv = document.getElementById('detail-results');
-
-            kommuneTitle.textContent = municipality.name;
-
-            const partyVotes = getPartyVotes(municipality.data);
-            const totalVotes = getTotalVotes(municipality.data);
-
-            let html = `<p class="mb-3"><strong>Totalt antall stemmer:</strong> ${totalVotes.toLocaleString()}</p>`;
-            html += '<div class="table-responsive"><table class="table table-sm table-hover">';
-            html += '<thead class="table-light"><tr><th>Parti</th><th>Stemmer</th><th>Prosent</th></tr></thead><tbody>';
-
-            partyVotes.forEach(party => {
-                const percentage = totalVotes > 0 ? ((party.votes / totalVotes) * 100).toFixed(1) : 0;
-                html += `<tr>
-                    <td>
-                        <span style="display: inline-block; width: 20px; height: 20px; background-color: ${party.color}; margin-right: 8px; border: 1px solid #000; vertical-align: middle;"></span>
-                        ${party.name}
-                    </td>
-                    <td><strong>${party.votes.toLocaleString()}</strong></td>
-                    <td><strong>${percentage}%</strong></td>
-                </tr>`;
-            });
-
-            html += '</tbody></table></div>';
-            resultsDiv.innerHTML = html;
-
-            createChart(partyVotes);
-
-            detailsDiv.style.display = 'block';
-            detailsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        function closeDetails() {
-            document.getElementById('municipality-details').style.display = 'none';
-            currentMunicipalityData = null;
-        }
-        
-        // Create chart
-        function createChart(partyVotes) {
-            const ctx = document.getElementById('detail-chart');
-
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
-
-            const topParties = partyVotes.slice(0, 10);
-
-            chartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: topParties.map(p => p.name),
-                    datasets: [{
-                        data: topParties.map(p => p.votes),
-                        backgroundColor: topParties.map(p => p.color),
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                boxWidth: 15,
-                                font: { size: 11 },
-                                padding: 10
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                    return `${context.label}: ${context.parsed.toLocaleString()} stemmer (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            createLegend();
-            createMap();
-        });
-    </script>
+    <script src="~/js/map.js"></script>
 }

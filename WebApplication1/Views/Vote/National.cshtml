@@ -1,417 +1,280 @@
-@using Microsoft.AspNetCore.Http
-@inject IHttpContextAccessor HttpContextAccessor
+@model WebApplication1.Models.VoteViewModel
+
 @{
-    ViewData["Title"] = "Stortingsvalg 2025 – Digital Valgportal";
-    var navn = ViewBag.UserFullName as string ?? "Velger";
-    var parties = ViewBag.Parties as List<string> ?? new List<string>();
-    var message = TempData["VoteMessage"] as string;
+    ViewData["Title"] = "Stortingsvalg 2025";
+    var displayName = string.IsNullOrWhiteSpace(Model.FullName) ? "Velger" : Model.FullName;
+    var parties = Model.Parties ?? Array.Empty<string>();
+    var voteInstructionId = "vote-instructions";
+    var voteStatusId = "vote-status";
 }
 
-<style>
-    .party-card {
-        transition: all 0.3s ease;
-        width: 200px;
-        height: 160px;
-        flex-shrink: 0;
-    }
-
-    .party-card:hover .card-content {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .party-card input[type="radio"] {
-        display: none !important;
-        position: absolute !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-    }
-
-    .party-card input[type="radio"]:checked + .card-content {
-        background-color: #0067C5 !important;
-        border-color: #0067C5 !important;
-    }
-
-    .party-card input[type="radio"]:checked + .card-content .party-name {
-        color: white !important;
-        font-weight: 600;
-    }
-
-    .card-content {
-        border: 2px solid #e5e7eb !important;
-        width: 200px;
-        height: 160px;
-        transition: all 0.3s ease;
-    }
-
-    .party-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 200px);
-        gap: 1rem;
-        justify-content: center;
-    }
-
-    @@media (max-width: 1200px) {
-    .party-grid {
-        grid-template-columns: repeat(4, 200px);
-    }
-    }
-
-    @@media (max-width: 950px) {
-    .party-grid {
-        grid-template-columns: repeat(3, 200px);
-    }
-    }
-
-    @@media (max-width: 700px) {
-    .party-grid {
-        grid-template-columns: repeat(2, 200px);
-    }
-    }
-
-    @@media (max-width: 450px) {
-    .party-grid {
-        grid-template-columns: repeat(1, 200px);
-    }
-    }
-
-    .stats-card {
-        background: #ffffff;
-        border-radius: 0.5rem;
-        padding: 2rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        margin-bottom: 1.5rem;
-    }
-
-    .instruction-card {
-        background: #ffffff;
-        border-radius: 0.5rem;
-        padding: 2rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        margin-bottom: 1.5rem;
-    }
-
-    #party-details {
-        transition: opacity 0.3s ease, transform 0.3s ease;
-    }
-
-    #party-details.show {
-        opacity: 1;
-        transform: translateY(0);
-    }
-</style>
-
-<section class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
-    <div class="max-w-7xl mx-auto space-y-6">
-
-        <!-- Top banner -->
-        <div class="bg-white border-l-4 border-blue-600 rounded-lg shadow-sm p-6">
-            <div class="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-1">Stortingsvalg 2025</h1>
-                    <p class="text-gray-600">Digital valgportal</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-sm text-gray-500 mb-1">Innlogget som</p>
-                    <p class="text-lg font-semibold text-gray-900">@navn</p>
-                </div>
-            </div>
-            <a asp-controller="Home" asp-action="Index"
-               class="mt-4 inline-block px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all font-medium text-center">
-                ← Tilbake til forsiden
-            </a>
-        </div>
-
-        <!-- Success/Error message -->
-        @if (!string.IsNullOrEmpty(message))
-        {
-            <div class="bg-white rounded-lg shadow-sm border-l-4 border-green-500 p-4">
-                <div class="flex items-center">
-                    <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <p class="text-green-800 font-medium">@message</p>
-                </div>
-            </div>
+@section Styles {
+    <style>
+        .vote-hero {
+            background: #00205b;
+            color: #fff;
+            border-radius: 12px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
         }
 
-        <!-- Instructions section -->
-        <div class="instruction-card">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Slik avgir du stemme</h2>
-            <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-6">
-                <div class="text-center">
-                    <div class="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">1</div>
-                    <p class="text-gray-700 font-medium">Velg partiet du ønsker å stemme på</p>
-                </div>
-                <div class="text-center">
-                    <div class="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">2</div>
-                    <p class="text-gray-700 font-medium">Kontroller at ditt valg er riktig</p>
-                </div>
-                <div class="text-center">
-                    <div class="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">3</div>
-                    <p class="text-gray-700 font-medium">Bekreft ved å trykke "Avgi stemme"</p>
-                </div>
-            </div>
-            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200 max-w-2xl mx-auto">
-                <p class="text-sm text-gray-700 text-center">
-                    <strong class="text-blue-800">Viktig:</strong> Når du har avgitt stemme, kan den ikke endres. Stemmen din er anonym og kryptert.
-                </p>
-            </div>
-        </div>
+        .vote-chip {
+            display: inline-flex;
+            gap: 0.5rem;
+            align-items: center;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.2);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
 
-        <!-- Voting form -->
-        <div class="stats-card">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Velg parti</h2>
-            <form id="voteForm" asp-action="SubmitVote" method="post">
-                <div class="flex flex-wrap gap-4 justify-center">
-                    @foreach (var party in parties)
-                    {
-                        <label class="party-card cursor-pointer block">
-                            <input type="radio" id="@party" name="party" value="@party" required data-party="@party" />
-                            <div class="card-content border-2 border-gray-200 rounded-lg p-4 bg-white flex items-center justify-center text-center">
-                                <span class="party-name text-gray-900 font-semibold text-sm leading-tight">@party</span>
+        .vote-card {
+            border: 1px solid #dfe3ec;
+            border-radius: 12px;
+            padding: 1.75rem;
+            background: #fff;
+        }
+
+        .vote-card--muted {
+            background: #f6f8fb;
+        }
+
+        .vote-section-title {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #4e596d;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+        }
+
+        .vote-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .vote-fieldset {
+            border: 0;
+            padding: 0;
+            margin: 0;
+        }
+
+        .vote-fieldset legend {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .vote-option {
+            border: 1px solid #e3e7f0;
+            border-radius: 10px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9fafc;
+        }
+
+        .vote-option input[type="radio"] {
+            accent-color: #00205b;
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+
+        .vote-alert {
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            background: #fef9e6;
+            border: 1px solid #f3dd9c;
+            color: #4e3b00;
+        }
+
+        .valg-link {
+            color: #0056b4;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        .vote-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1050;
+        }
+
+        .vote-modal-backdrop.show {
+            display: flex;
+        }
+
+        .vote-modal {
+            background: #fff;
+            border-radius: 16px;
+            max-width: 480px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+        }
+
+        .vote-modal h2 {
+            font-size: 1.4rem;
+            margin-bottom: 0.75rem;
+        }
+    </style>
+}
+
+<div class="container py-5">
+    <section class="vote-hero">
+        <span class="vote-chip">Stortingsvalg 2025</span>
+        <h1 class="mt-3 mb-2">Hei @displayName</h1>
+        <p class="lead mb-4">
+            Du er logget inn og kan levere stemmen din digitalt. Følg stegene, velg parti og signer for å motta kvittering.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+            <p class="mb-0">Kommune registrert: <strong>@(Model.Kommune ?? "Ukjent")</strong></p>
+            <span class="text-white-75">Status: @(Model.HasVoted ? "Allerede stemt" : "Ikke stemt ennå")</span>
+        </div>
+    </section>
+
+    @if (!string.IsNullOrEmpty(Model.StatusMessage))
+    {
+        <div class="vote-alert mb-4" role="status" aria-live="polite" id="@voteStatusId">
+            @Model.StatusMessage
+        </div>
+    }
+
+    <div class="row gy-4">
+        <div class="col-lg-8">
+            <div class="vote-card mb-4">
+                <p class="vote-section-title">Slik stemmer du</p>
+                <ol class="ps-3">
+                    <li>Velg partiet ditt nedenfor.</li>
+                    <li>Kontroller at informasjonen stemmer.</li>
+                    <li>Send inn stemmen og motta kvittering.</li>
+                </ol>
+            </div>
+
+            <div class="vote-card">
+                <p class="vote-section-title">Velg parti</p>
+
+                @if (Model.HasVoted)
+                {
+                    <p class="mb-0">Du har allerede avgitt stemmen din. Kontakt støtte dersom du trenger å trekke den tilbake.</p>
+                }
+                else
+                {
+                    <form asp-action="SubmitVote" method="post" aria-describedby="@voteInstructionId" id="vote-form">
+                        @Html.AntiForgeryToken()
+                        <fieldset class="vote-fieldset">
+                            <legend>Velg hvilket parti du ønsker å stemme på</legend>
+                            <p id="@voteInstructionId" class="text-muted">Velg nøyaktig ett parti fra listen for å gå videre.</p>
+                            <div class="vote-grid" role="radiogroup" aria-describedby="@voteInstructionId">
+                                @for (var i = 0; i < parties.Count; i++)
+                                {
+                                    var party = parties[i];
+                                    var optionId = $"party-option-{i}";
+                                    <label class="vote-option" for="@optionId">
+                                        <span class="fw-semibold">@party</span>
+                                        <input type="radio" id="@optionId" name="party" value="@party" required />
+                                    </label>
+                                }
                             </div>
-                        </label>
-                    }
-                </div>
-            </form>
-        </div>
+                        </fieldset>
 
-        <!-- Party Details Section (Initially Hidden) -->
-        <div id="party-details" class="stats-card" style="display: none;">
-            <button class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-all mb-4" onclick="closeDetails()">✕ Lukk</button>
-            <h4 id="detail-party-name" class="text-2xl font-bold text-gray-900 mb-4"></h4>
-            <div class="grid md:grid-cols-2 gap-6">
-                <div>
-                    <h6 class="text-lg font-semibold mb-3">📋 Partiinformasjon</h6>
-                    <div id="detail-info" class="space-y-2"></div>
-                </div>
-                <div>
-                    <h6 class="text-lg font-semibold mb-3">🎯 Hovedsaker</h6>
-                    <div id="detail-issues" class="space-y-2"></div>
-                </div>
+                        <div class="d-flex flex-wrap gap-3 align-items-center mt-4">
+                            <a asp-controller="Home" asp-action="Index" class="valg-link">← Tilbake til forsiden</a>
+                            <button type="submit" class="btn-idporten btn btn-lg fw-semibold ms-auto">Avgi stemme</button>
+                        </div>
+                    </form>
+                }
             </div>
         </div>
 
-        <!-- Submit button box -->
-        <div class="stats-card">
-            <div class="flex justify-center">
-                <button type="submit" form="voteForm"
-                        class="px-16 py-5 bg-blue-600 text-white font-bold text-lg rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg transition-all">
-                    Avgi stemme →
-                </button>
+        <div class="col-lg-4">
+            <div class="vote-card vote-card--muted mb-4">
+                <p class="vote-section-title">Status</p>
+                <p class="mb-1"><strong>Kommune:</strong> @(Model.Kommune ?? "Ukjent")</p>
+                <p class="mb-1"><strong>Stemmegivning:</strong> @(Model.HasVoted ? "Fullført" : "Ikke sendt" )</p>
+                <p class="mb-0 text-muted">Du kan trekke stemmen tilbake frem til fristen.</p>
             </div>
-        </div>
 
-        <!-- Footer -->
-        <div class="text-center text-sm text-gray-600 mt-6">
-            <p>Sikret med moderne kryptering | Din stemme er anonym | Støttes av Valgdirektoratet</p>
+            <div class="vote-card">
+                <p class="vote-section-title">Trenger du hjelp?</p>
+                <p>Ring valgveiledning på <a href="tel:+4780008080">800 08 080</a> eller send en e-post til <a href="mailto:valg@brukerstotte.no">valg@brukerstotte.no</a>.</p>
+                <p class="mb-0 small text-muted">Åpen alle dager 08–22. Tegnspråktolk man–fre 10–18.</p>
+            </div>
         </div>
     </div>
-</section>
+</div>
 
-<script>
-    // Party information database
-    const partyInfo = {
-        'Arbeiderpartiet': {
-            leader: 'Jonas Gahr Støre',
-            founded: '1887',
-            ideology: 'Sosialdemokrati',
-            issues: ['Velferdsstaten', 'Jobber og næringsliv', 'Klimatiltak', 'Rettferdig fordeling']
-        },
-        'Høyre': {
-            leader: 'Erna Solberg',
-            founded: '1884',
-            ideology: 'Konservatisme',
-            issues: ['Entreprenørskap', 'Lavere skatter', 'Utdanning', 'Trygghet']
-        },
-        'Senterpartiet': {
-            leader: 'Trygve Slagsvold Vedum',
-            founded: '1920',
-            ideology: 'Senterorientering',
-            issues: ['Distriktspolitikk', 'Landbruk', 'Desentralisering', 'Nasjonal kontroll']
-        },
-        'Fremskrittspartiet': {
-            leader: 'Sylvi Listhaug',
-            founded: '1973',
-            ideology: 'Liberalkonservatisme',
-            issues: ['Lavere skatter', 'Mindre byråkrati', 'Streng innvandring', 'Veier og transport']
-        },
-        'Sosialistisk Venstreparti': {
-            leader: 'Kirsti Bergstø',
-            founded: '1975',
-            ideology: 'Demokratisk sosialisme',
-            issues: ['Klimarettferdighet', 'Økonomisk likhet', 'Fellesskap', 'Velferd']
-        },
-        'Rødt': {
-            leader: 'Marie Sneve Martinussen',
-            founded: '2007',
-            ideology: 'Sosialisme',
-            issues: ['Arbeiderrettigheter', 'Gratis velferd', 'Klimaomstilling', 'Økonomisk rettferdighet']
-        },
-        'Venstre': {
-            leader: 'Guri Melby',
-            founded: '1884',
-            ideology: 'Sosialliberalisme',
-            issues: ['Klima og miljø', 'Utdanning', 'Frihet', 'Næringsutvikling']
-        },
-        'Kristelig Folkeparti': {
-            leader: 'Dag Inge Ulstein',
-            founded: '1933',
-            ideology: 'Kristendemokrati',
-            issues: ['Familie og barn', 'Verdier', 'Omsorg', 'Rusforebygging']
-        },
-        'Miljøpartiet De Grønne': {
-            leader: 'Arild Hermstad',
-            founded: '1988',
-            ideology: 'Grønn politikk',
-            issues: ['Klimakutt', 'Bærekraft', 'Biologisk mangfold', 'Miljøvern']
-        },
-        'Innsamslingspartie': {
-            leader: 's',
-            founded: 's',
-            ideology: 's',
-            issues: ['s', 's', 's', 's']
-        },
-        'Partiet De Kristne': {
-            leader: 's',
-            founded: 's',
-            ideology: 's',
-            issues: ['s', 's', 's', 's']
-        },
-        'Demokratene': {
-            leader: 's',
-            founded: 's',
-            ideology: 's',
-            issues: ['s', 's', 's', 's']
-        },
-        'Liberalistene': {
-            leader: 's',
-            founded: 's',
-            ideology: 's',
-            issues: ['s', 's', 's', 's']
-        },
-        'Pensjonspartiet': {
-            leader: 's',
-            founded: 's',
-            ideology: 's',
-            issues: ['s', 's', 's', 's']
-        },
-        'Kystpartiet': {
-            leader: 's',
-            founded: 's',
-            ideology: 's',
-            issues: ['s', 's', 's', 's']
-        },
-        'Alliansen': {
-            leader: 's',
-            founded: 's',
-            ideology: 's',
-            issues: ['s', 's', 's', 's']
-        },
-        'Norges Kommunistiske Parti': {
-            leader: 's',
-            founded: 's',
-            ideology: 's',
-            issues: ['s', 's', 's', 's']
-        },
-        'Piratpartiet': {
-            leader: 's',
-            founded: 's',
-            ideology: 's',
-            issues: ['s', 's', 's', 's']
-        },
-        'Helsepartiet': {
-            leader: 's',
-            founded: 's',
-            ideology: 's',
-            issues: ['s', 's', 's', 's']
-        },
-        'Folkestyret': {
-            leader: 's',
-            founded: 's',
-            ideology: 's',
-            issues: ['s', 's', 's', 's']
-        },
-        'Norsk Republikanske Allianse': {
-            leader: 's',
-            founded: 's',
-            ideology: 's',
-            issues: ['s', 's', 's', 's']
-        },
-        'Verdipartiet': {
-            leader: 's',
-            founded: 's',
-            ideology: 's',
-            issues: ['s', 's', 's', 's']
-        },
-        'Partiet Sentrum': {
-            leader: 's',
-            founded: 's',
-            ideology: 's',
-            issues: ['s', 's', 's', 's']
-        },
-    };
+<div class="vote-modal-backdrop" id="voteConfirmModal" role="dialog" aria-modal="true" aria-labelledby="voteConfirmTitle" aria-describedby="voteConfirmText">
+    <div class="vote-modal">
+        <p class="vote-section-title mb-2" id="voteConfirmTitle">Bekreft stemme</p>
+        <h2 id="voteConfirmHeadline">Er du sikker?</h2>
+        <p id="voteConfirmText">Du er i ferd med å stemme på <strong id="voteConfirmParty"></strong>. Stemmen registreres umiddelbart når du bekrefter.</p>
+        <div class="d-flex justify-content-end gap-3 mt-4">
+            <button type="button" class="btn btn-outline-secondary" id="cancelVoteBtn">Avbryt</button>
+            <button type="button" class="btn-idporten btn" id="confirmVoteBtn">Bekreft og send inn</button>
+        </div>
+    </div>
+</div>
 
-    let selectedParty = null;
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('vote-form');
+            if (!form) {
+                return;
+            }
+            const modal = document.getElementById('voteConfirmModal');
+            const confirmBtn = document.getElementById('confirmVoteBtn');
+            const cancelBtn = document.getElementById('cancelVoteBtn');
+            const partyLabel = document.getElementById('voteConfirmParty');
 
-    document.querySelectorAll('.party-card input[type="radio"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            // Reset all cards
-            document.querySelectorAll('.party-card .card-content').forEach(card => {
-                card.style.backgroundColor = '#FFFFFF';
-                card.style.borderColor = '#e5e7eb';
-                const name = card.querySelector('.party-name');
-                name.style.color = '#111827';
-                name.style.fontWeight = '600';
+            const hideModal = () => {
+                modal.classList.remove('show');
+            };
+
+            const showModal = (partyName) => {
+                partyLabel.textContent = partyName;
+                modal.classList.add('show');
+            };
+
+            form.addEventListener('submit', (event) => {
+                if (form.dataset.voteConfirmed === 'true') {
+                    form.dataset.voteConfirmed = 'false';
+                    return;
+                }
+
+                const selected = form.querySelector('input[name="party"]:checked');
+                if (!selected) {
+                    return;
+                }
+
+                event.preventDefault();
+                showModal(selected.value);
             });
 
-            // Highlight selected card
-            if (this.checked) {
-                const card = this.nextElementSibling;
-                card.style.backgroundColor = '#0067C5';
-                card.style.borderColor = '#0067C5';
-                const name = card.querySelector('.party-name');
-                name.style.color = '#FFFFFF';
-                name.style.fontWeight = '600';
+            confirmBtn?.addEventListener('click', () => {
+                form.dataset.voteConfirmed = 'true';
+                hideModal();
+                form.requestSubmit();
+            });
 
-                // Show party details
-                selectedParty = this.getAttribute('data-party');
-                showPartyDetails(selectedParty);
-            }
+            cancelBtn?.addEventListener('click', () => {
+                hideModal();
+            });
+
+            modal?.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    hideModal();
+                }
+            });
         });
-    });
-
-    function showPartyDetails(partyName) {
-        const detailsDiv = document.getElementById('party-details');
-        const partyNameTitle = document.getElementById('detail-party-name');
-        const infoDiv = document.getElementById('detail-info');
-        const issuesDiv = document.getElementById('detail-issues');
-
-        partyNameTitle.textContent = partyName;
-
-        const info = partyInfo[partyName];
-
-        if (info) {
-            infoDiv.innerHTML = `
-                <p class="text-gray-700"><strong>Partileder:</strong> ${info.leader}</p>
-                <p class="text-gray-700"><strong>Grunnlagt:</strong> ${info.founded}</p>
-                <p class="text-gray-700"><strong>Ideologi:</strong> ${info.ideology}</p>
-            `;
-
-            issuesDiv.innerHTML = '<ul class="list-disc list-inside space-y-1">' +
-                info.issues.map(issue => `<li class="text-gray-700">${issue}</li>`).join('') +
-                '</ul>';
-        } else {
-            infoDiv.innerHTML = '<p class="text-gray-700">Informasjon om dette partiet er ikke tilgjengelig.</p>';
-            issuesDiv.innerHTML = '<p class="text-gray-700">Hovedsaker er ikke tilgjengelige.</p>';
-        }
-
-        detailsDiv.style.display = 'block';
-        detailsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    function closeDetails() {
-        document.getElementById('party-details').style.display = 'none';
-    }
-</script>
+    </script>
+}
