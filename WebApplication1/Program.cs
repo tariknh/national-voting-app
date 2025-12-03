@@ -1,12 +1,17 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
+using WebApplication1.Services;  // Kun denne er ny
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("NeonDatabase") ??
-                       throw new InvalidOperationException("Connection string 'NeonDatabase' not found.");
+//load the secret .env file to the program (encryption and all that)
+Env.Load();
+
+//get the connection string from the .env file
+var connectionString = Env.GetString("CONNECTION_STRING")
+                       ?? throw new InvalidOperationException("Connection string not found in .env");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -15,6 +20,7 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddSession(options =>
@@ -23,6 +29,9 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
+
+// Kun denne linjen er ny
+builder.Services.AddScoped<VotingTokenService>();
 
 var app = builder.Build();
 
@@ -55,3 +64,4 @@ app.MapRazorPages()
     .WithStaticAssets();
 
 app.Run();
+  

@@ -10,8 +10,10 @@ public class ApplicationDbContext : IdentityDbContext
         : base(options)
     {
     }
+    
     public DbSet<User> Users { get; set; }
     public DbSet<Stemmer> Stemmers { get; set; }
+    public DbSet<Vertifikasjon> Vertifikasjons { get; set; }  // Legg til denne
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -19,5 +21,6 @@ public class ApplicationDbContext : IdentityDbContext
 
         modelBuilder.Entity<User>().ToTable("users");
         modelBuilder.Entity<Stemmer>().ToTable("stemmer");
+        modelBuilder.Entity<Vertifikasjon>().ToTable("verifikasjon");  // Legg til denne
     }
 }
