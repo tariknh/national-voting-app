@@ -13,6 +13,9 @@ public class ApplicationDbContext : IdentityDbContext
     }
     public DbSet<User> Users { get; set; }
     public DbSet<Stemmer> Stemmers { get; set; }
+    
+    public DbSet<Vertifikasjon> Vertifikasjons { get; set; }
+    
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

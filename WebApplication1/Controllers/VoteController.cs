@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System;
 using WebApplication1.Data;
 using WebApplication1.Models;
+using WebApplication1.Services;
 
 namespace WebApplication1.Controllers
 {
@@ -14,6 +16,7 @@ namespace WebApplication1.Controllers
 	public class VoteController : Controller
 	{
 		private readonly ApplicationDbContext _context;
+		private readonly VotingTokenService _tokenService;
 
 		private static readonly IReadOnlyList<string> Parties = new List<string>
 		{
@@ -42,9 +45,10 @@ namespace WebApplication1.Controllers
 			"Partiet Sentrum"
 		};
 
-		public VoteController(ApplicationDbContext context)
+		public VoteController(ApplicationDbContext context, VotingTokenService tokenService)
 		{
 			_context = context;
+			_tokenService = tokenService;
 		}
 
 		public async Task<IActionResult> National()
@@ -104,6 +108,30 @@ namespace WebApplication1.Controllers
 				TempData["VoteMessage"] = "Ugyldig parti valgt.";
 				return RedirectToAction(nameof(National));
 			}
+
+			// ========== NY FUNKSJONALITET: Kryptert token ==========
+			try
+			{
+				// Hent BankIdUuid
+				var bankIdUuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+				if (!string.IsNullOrEmpty(bankIdUuid))
+				{
+					// Konverter parti til int
+					int partiInt = PartyMapper.GetPartyId(party);
+					if (partiInt != -1)
+					{
+						// Generer og lagre kryptert token
+						string fullToken = await _tokenService.GenerateVotingTokenByBankId(bankIdUuid);
+						await _tokenService.StoreVote(fullToken, partiInt, kommune);
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				// Log feilen, men fortsett med normal stemmeregistrering
+				Console.WriteLine($"Token generation error: {ex.Message}");
+			}
+			// ========== SLUTT NY FUNKSJONALITET ==========
 
 			user.HasVoted = true;
 			await _context.SaveChangesAsync();
@@ -181,4 +209,3 @@ namespace WebApplication1.Controllers
 		}
 	}
 }
-

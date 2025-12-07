@@ -30,7 +30,7 @@ namespace WebApplication1.Services
         }
 
         /// <summary>
-        /// Genererer voting token
+        /// Genererer voting token basert på fødselsnummer (gammel metode)
         /// </summary>
         public async Task<string> GenerateVotingToken(string fodselsnr)
         {
@@ -68,6 +68,46 @@ namespace WebApplication1.Services
                 user.HasVoted = true;
                 await _context.SaveChangesAsync();
 
+                return fullToken;
+            }
+        }
+
+        /// <summary>
+        /// Genererer voting token basert på BankIdUuid (NY metode - brukes med BankID-innlogging)
+        /// </summary>
+        public async Task<string> GenerateVotingTokenByBankId(string bankIdUuid)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.BankIdUuid == bankIdUuid);
+            
+            if (user == null)
+            {
+                throw new InvalidOperationException("Bruker ikke funnet");
+            }
+
+            if (user.HasVoted == true)
+            {
+                throw new InvalidOperationException("Already voted");
+            }
+
+            // Generer tilfeldig voteId
+            byte[] randomBytes = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+            }
+            string voteId = Convert.ToHexString(randomBytes).ToLower();
+
+            // Generer HMAC signatur
+            using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_secretKey)))
+            {
+                byte[] hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(voteId));
+                string signature = Convert.ToHexString(hashBytes).ToLower();
+
+                // Kombiner til full token
+                string fullToken = $"{voteId}.{signature}";
+
+                // MERK: Vi markerer IKKE HasVoted her - det gjøres i controlleren
                 return fullToken;
             }
         }
