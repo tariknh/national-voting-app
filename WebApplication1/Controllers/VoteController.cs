@@ -42,7 +42,8 @@ namespace WebApplication1.Controllers
 			"Folkestyret",
 			"Norsk Republikanse Allianse",
 			"Verdipartiet",
-			"Partiet Sentrum"
+			"Partiet Sentrum",
+			"Blank"
 		};
 
 		public VoteController(ApplicationDbContext context, VotingTokenService tokenService)
@@ -73,72 +74,75 @@ namespace WebApplication1.Controllers
 		}
 
 		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public async Task<IActionResult> SubmitVote(string party)
-		{
-			if (string.IsNullOrWhiteSpace(party))
-			{
-				TempData["VoteMessage"] = "Velg et parti før du sender inn.";
-				return RedirectToAction(nameof(National));
-			}
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> SubmitVote(string party)
+{
+    if (string.IsNullOrWhiteSpace(party))
+    {
+        TempData["VoteMessage"] = "Velg et parti før du sender inn.";
+        return RedirectToAction(nameof(National));
+    }
 
-			var user = await GetCurrentUserAsync();
-			if (user == null)
-			{
-				TempData["VoteMessage"] = "Økten din er utløpt. Logg inn igjen.";
-				return RedirectToAction("Login", "Home");
-			}
+    var user = await GetCurrentUserAsync();
+    if (user == null)
+    {
+        TempData["VoteMessage"] = "Økten din er utløpt. Logg inn igjen.";
+        return RedirectToAction("Login", "Home");
+    }
 
-			if (user.HasVoted == true)
-			{
-				TempData["VoteMessage"] = "Du har allerede avgitt din stemme.";
-				return RedirectToAction(nameof(National));
-			}
+    if (user.HasVoted == true)
+    {
+        TempData["VoteMessage"] = "Du har allerede avgitt din stemme.";
+        return RedirectToAction(nameof(National));
+    }
 
-			var kommune = string.IsNullOrWhiteSpace(user.Kommune) ? "Ukjent" : user.Kommune;
-			var stemme = await _context.Stemmers.FirstOrDefaultAsync(s => s.Kommune == kommune);
-			if (stemme == null)
-			{
-				stemme = new Stemmer { Kommune = kommune };
-				_context.Stemmers.Add(stemme);
-			}
+    var kommune = string.IsNullOrWhiteSpace(user.Kommune) ? "Ukjent" : user.Kommune;
+    
+    // Normaliser partinavnet for sammenligning
+    var normalizedParty = party.Trim().ToLowerInvariant();
+    
+    // Hvis det ikke er blank stemme, oppdater Stemmer-tabellen
+    if (normalizedParty != "blank")
+    {
+        var stemme = await _context.Stemmers.FirstOrDefaultAsync(s => s.Kommune == kommune);
+        if (stemme == null)
+        {
+            stemme = new Stemmer { Kommune = kommune };
+            _context.Stemmers.Add(stemme);
+        }
 
-			if (!IncrementPartyCounter(stemme, party))
-			{
-				TempData["VoteMessage"] = "Ugyldig parti valgt.";
-				return RedirectToAction(nameof(National));
-			}
+        if (!IncrementPartyCounter(stemme, party))
+        {
+            TempData["VoteMessage"] = "Ugyldig parti valgt.";
+            return RedirectToAction(nameof(National));
+        }
+    }
 
-			// ========== NY FUNKSJONALITET: Kryptert token ==========
-			try
-			{
-				// Hent BankIdUuid
-				var bankIdUuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-				if (!string.IsNullOrEmpty(bankIdUuid))
-				{
-					// Konverter parti til int
-					int partiInt = PartyMapper.GetPartyId(party);
-					if (partiInt != -1)
-					{
-						// Generer og lagre kryptert token
-						string fullToken = await _tokenService.GenerateVotingTokenByBankId(bankIdUuid);
-						await _tokenService.StoreVote(fullToken, partiInt, kommune);
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				// Log feilen, men fortsett med normal stemmeregistrering
-				Console.WriteLine($"Token generation error: {ex.Message}");
-			}
-			// ========== SLUTT NY FUNKSJONALITET ==========
+    // Generer og lagre token for ALLE stemmer (inkludert blank)
+    try
+    {
+        var bankIdUuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(bankIdUuid))
+        {
+            int partiInt = PartyMapper.GetPartyId(party);
+            if (partiInt != -1)
+            {
+                string fullToken = await _tokenService.GenerateVotingTokenByBankId(bankIdUuid);
+                await _tokenService.StoreVote(fullToken, partiInt, kommune);
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Token generation error: {ex.Message}");
+    }
 
-			user.HasVoted = true;
-			await _context.SaveChangesAsync();
+    user.HasVoted = true;
+    await _context.SaveChangesAsync();
 
-			TempData["VoteMessage"] = $"Stemmen din for {party} i {kommune} er registrert.";
-			return RedirectToAction(nameof(National));
-		}
+    TempData["VoteMessage"] = $"Stemmen din for {party} i {kommune} er registrert.";
+    return RedirectToAction(nameof(National));
+}
 
 		private async Task<User?> GetCurrentUserAsync()
 		{
@@ -201,6 +205,7 @@ namespace WebApplication1.Controllers
 				case "norsk republikanse allianse": stemme.NorskRepublikanskAllianse++; break;
 				case "verdipartiet": stemme.Verdipartiet++; break;
 				case "partiet sentrum": stemme.PartietSentrum++; break;
+				case "blank": break;
 				default:
 					return false;
 			}

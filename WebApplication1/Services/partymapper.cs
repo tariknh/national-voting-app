@@ -29,7 +29,8 @@ namespace WebApplication1.Services
             { "folkestyret", 20 },
             { "norsk republikanse allianse", 21 },
             { "verdipartiet", 22 },
-            { "partiet sentrum", 23 }
+            { "partiet sentrum", 23 },
+            { "blank", 24 }
         };
 
         private static readonly Dictionary<int, string> IntToParty = new()
@@ -56,44 +57,36 @@ namespace WebApplication1.Services
             { 20, "Folkestyret" },
             { 21, "Norsk Republikanse Allianse" },
             { 22, "Verdipartiet" },
-            { 23, "Partiet Sentrum" }
+            { 23, "Partiet Sentrum" },
+            {24, "blank" }
         };
 
-        /// <summary>
-        /// Konverterer parti-navn til int ID
-        /// </summary>
-        /// <param name="partyName">Parti-navn (case-insensitive)</param>
-        /// <returns>Parti ID (1-23), eller -1 hvis ugyldig</returns>
+        
+        // Konverterer partinavn til int ID
+        
         public static int GetPartyId(string partyName)
         {
             var key = partyName.ToLower();
             return PartyToInt.ContainsKey(key) ? PartyToInt[key] : -1;
         }
 
-        /// <summary>
-        /// Konverterer parti ID til navn
-        /// </summary>
-        /// <param name="partyId">Parti ID (1-23)</param>
-        /// <returns>Parti-navn, eller "Ukjent" hvis ugyldig</returns>
+        
+        // Konverterer parti ID til navn
+        
         public static string GetPartyName(int partyId)
         {
             return IntToParty.ContainsKey(partyId) ? IntToParty[partyId] : "Ukjent";
         }
 
-        /// <summary>
-        /// Hent alle parti-navn (for dropdown/liste)
-        /// </summary>
-        /// <returns>Liste over alle parti-navn</returns>
+      
+        // Henter alle partinavn liste
+        
         public static List<string> GetAllPartyNames()
         {
             return new List<string>(IntToParty.Values);
         }
-
-        /// <summary>
-        /// Sjekk om parti-navn er gyldig
-        /// </summary>
-        /// <param name="partyName">Parti-navn</param>
-        /// <returns>True hvis gyldig, ellers false</returns>
+        // Sjekk om partinavn er gyldig
+        
         public static bool IsValidParty(string partyName)
         {
             return PartyToInt.ContainsKey(partyName.ToLower());
