@@ -175,3 +175,133 @@ textarea:focus-visible,
     top: 0;
 }
 
+/* ================================
+   Mobile Responsive Navbar
+   ================================ */
+
+/* Hamburger button - hidden on desktop */
+.mobile-menu-btn {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    z-index: 1001;
+}
+
+.hamburger-line {
+    display: block;
+    width: 24px;
+    height: 3px;
+    background-color: #00205b;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+/* Hamburger animation when open */
+.mobile-menu-btn.active .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(6px, 6px);
+}
+
+.mobile-menu-btn.active .hamburger-line:nth-child(2) {
+    opacity: 0;
+}
+
+.mobile-menu-btn.active .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+    .nav-content {
+        flex-wrap: wrap;
+        position: relative;
+    }
+
+    .mobile-menu-btn {
+        display: flex;
+        order: 2;
+    }
+
+    .brand {
+        order: 1;
+        flex: 1;
+    }
+
+    .primary-nav {
+        display: none;
+        order: 3;
+        width: 100%;
+        padding: 1rem 0;
+        border-top: 1px solid #eee;
+        margin-top: 0.75rem;
+    }
+
+    .primary-nav.active {
+        display: block;
+    }
+
+    .primary-nav ul {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .primary-nav li {
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .primary-nav a {
+        display: block;
+        padding: 0.85rem 0.5rem;
+    }
+
+    .nav-actions {
+        display: none;
+        order: 4;
+        width: 100%;
+        padding: 1rem 0;
+        border-top: 1px solid #eee;
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+    .nav-actions.active {
+        display: flex;
+    }
+
+    .nav-actions .lang-switch {
+        margin-right: 0.5rem;
+    }
+
+    .user-greeting {
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .logo-text {
+        font-size: 1.1rem !important;
+    }
+}
+
+/* Tablet styles */
+@media (max-width: 992px) and (min-width: 769px) {
+    .primary-nav ul {
+        gap: 0.5rem;
+    }
+
+    .primary-nav a {
+        font-size: 0.9rem;
+        padding: 0.4rem;
+    }
+
+    .nav-actions .lang-switch {
+        margin-right: 0.5rem;
+        font-size: 0.85rem;
+    }
+}
+

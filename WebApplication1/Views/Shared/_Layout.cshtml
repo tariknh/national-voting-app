@@ -34,21 +34,29 @@
         <div class="nav-content">
             <div class="brand">
                 <a asp-controller="Home" asp-action="Index" class="logo-link">
-                    <!-- You can place a small logo image + text -->
                     <span class="logo-text">Digital Valgportal</span>
                 </a>
             </div>
-            <nav class="primary-nav">
+            
+            <!-- Mobile menu button -->
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Åpne meny" aria-expanded="false">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+            
+            <!-- Navigation (hidden on mobile until toggled) -->
+            <nav class="primary-nav" id="primaryNav">
                 <ul>
                     <li><a asp-controller="Home" asp-action="Index">Hjem</a></li>
                     <li><a asp-controller="Map" asp-action="Index">Valgkart</a></li>
                     <li><a asp-controller="Home" asp-action="Privacy">Personvern</a></li>
                     <li><a asp-controller="Home" asp-action="Contact">Kontakt</a></li>
                     <li><a asp-controller="Home" asp-action="Accessibility">Tilgjengelighet</a></li>
-                    
                 </ul>
             </nav>
-            <div class="nav-actions">
+            
+            <div class="nav-actions" id="navActions">
                 <a href="#" class="lang-switch" aria-label="Switch to English">EN</a> |
                 <a href="#" class="lang-switch" aria-label="Switch to Norwegian">NO</a>
                 @if (!isAuthenticated)
@@ -57,8 +65,8 @@
                 }
                 else
                 {
-                    <span class="fw-semibold">@(!string.IsNullOrWhiteSpace(userName) ? $"Hei, {userName}" : "Du er innlogget")</span>
-                    <a class="btn btn-outline-danger" asp-controller="Home" asp-action="Logout">Logg ut</a>
+                    <span class="fw-semibold user-greeting">@(!string.IsNullOrWhiteSpace(userName) ? $"Hei, {userName}" : "Du er innlogget")</span>
+                    <a class="btn btn-outline-danger btn-sm" asp-controller="Home" asp-action="Logout">Logg ut</a>
                 }
             </div>
         </div>

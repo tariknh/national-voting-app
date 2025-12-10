@@ -4,15 +4,11 @@ This is a project that tries to make a digital voting system for Norway.
 
 BankID login:
 
-
-
-Fødselsnr: 12104923737
-
-Navn: John McAfee
-
-Engangskode: otp
-
-Passord: qwer1234
+| Fødselsnr | Navn | Engangskode | Passord |
+|----------|----------|----------|----------|
+| 12104923737    | John McAfee     | otp     | qwer1234     |
+| Row 2    | John McAfee     | otp     | qwer1234     |
+| Row 3    | John McAfee     | otp     | qwer1234     |
 
 
 
