@@ -20,8 +20,9 @@ const mapApp = (function() {
             .replace(/\s+kommune$/i, '')
             .replace(/\s+/g, ' ');
 
-        if (name == "våler" && region){
-            return `${name} ${region}`;
+        if (name === "våler"){
+            return `${name} ${region.toLowerCase()}`;
+            
         }
         return name;
     }

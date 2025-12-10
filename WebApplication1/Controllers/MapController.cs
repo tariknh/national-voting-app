@@ -12,7 +12,7 @@ namespace WebApplication1.Controllers
     public class MapController : Controller
     {
         // Configure the release time year, month, day, houer, minute, second, UTC
-        private static readonly DateTime ReleaseTime = new DateTime(2029, 9, 01, 21, 0, 0, DateTimeKind.Utc);
+        private static readonly DateTime ReleaseTime = new DateTime(2025, 9, 01, 21, 0, 0, DateTimeKind.Utc);
         private readonly ApplicationDbContext _context;
 
         // Party configuration moved from JavaScript
