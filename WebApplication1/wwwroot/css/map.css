@@ -1,58 +1,284 @@
-﻿.stats-card {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-}
+﻿/* Map page specific styles - follows valg design system */
 
+/* Side panel container */
 #side-panel {
     max-height: 80vh;
     overflow-y: auto;
 }
 
+/* Map container styling */
+#container {
+    height: 600px;
+    min-width: 310px;
+    max-width: 100%;
+    margin: 0 auto;
+    background: #f6f8fb;
+    border-radius: 12px;
+}
+
+/* Loading and countdown styling */
+#loading, #countdown-container {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.1rem;
+    color: #4e596d;
+}
+
+#countdown-container h4 {
+    color: #00205b;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+#countdown {
+    color: #0056b4;
+    font-weight: 600;
+    font-size: 1.5rem;
+}
+
+/* Legend styling */
 .legend-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 8px;
+    padding: 10px 12px;
     border-radius: 8px;
-    background-color: #f8f9fa;
+    background-color: #f6f8fb;
+    margin-bottom: 8px;
+    border: 1px solid #eceff5;
+    transition: all 0.2s ease;
+}
+
+.legend-item:hover {
+    background-color: #eceff5;
 }
 
 .legend-color {
-    width: 20px;
-    height: 20px;
-    border: 1px solid #000;
-    border-radius: 3px;
-    margin-right: 8px;
+    width: 24px;
+    height: 24px;
+    border: 2px solid #dfe3ec;
+    border-radius: 4px;
+    margin-right: 12px;
+    flex-shrink: 0;
 }
 
 .legend-label {
     flex: 1;
+    font-size: 0.95rem;
 }
 
-#container {
-    height: 800px;
-    min-width: 310px;
-    max-width: 100%;
-    margin: 0 auto;
+.legend-label strong {
+    color: #00205b;
 }
 
-#loading {
-    text-align: center;
-    padding: 50px;
-    font-size: 18px;
-    color: #666;
+/* Form controls styling */
+.form-control {
+    border: 1px solid #dfe3ec;
+    border-radius: 6px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease;
 }
 
+.form-control:focus {
+    border-color: #0056b4;
+    box-shadow: 0 0 0 3px rgba(0, 86, 180, 0.1);
+    outline: none;
+}
+
+/* Municipality search results */
 #municipality-results {
-    max-height: 200px;
+    max-height: 250px;
     overflow-y: auto;
+    background: white;
+    border: 1px solid #dfe3ec;
+    border-radius: 6px;
+    margin-top: 4px;
 }
 
 #municipality-results button {
     text-align: left;
     font-size: 0.9rem;
+    padding: 0.6rem 0.9rem;
+    border: none;
+    background: transparent;
+    width: 100%;
+    transition: background-color 0.2s ease;
 }
 
+#municipality-results button:hover {
+    background-color: #f6f8fb;
+}
+
+/* Municipality details card */
+#municipality-details {
+    margin-top: 2rem;
+}
+
+#detail-kommune {
+    color: #00205b;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+/* Button styling consistent with homepage */
+.btn-primary {
+    background-color: #0062ba;
+    color: white;
+    font-weight: 600;
+    border: none;
+    padding: 0.5rem 1.2rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #004c93;
+    transform: translateY(-1px);
+}
+
+.btn-outline-primary {
+    color: #0062ba;
+    border: 1px solid #0062ba;
+    background: white;
+    font-weight: 600;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-outline-primary:hover {
+    background-color: #0062ba;
+    color: white;
+}
+
+.btn-outline-secondary {
+    color: #4e596d;
+    border: 1px solid #dfe3ec;
+    background: white;
+    font-weight: 600;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #f6f8fb;
+    border-color: #4e596d;
+}
+
+/* Table styling */
+.table {
+    font-size: 0.95rem;
+}
+
+.table thead {
+    background-color: #f6f8fb;
+    color: #00205b;
+    font-weight: 600;
+}
+
+.table thead th {
+    border-bottom: 2px solid #dfe3ec;
+    padding: 0.8rem;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+}
+
+.table tbody td {
+    padding: 0.8rem;
+    vertical-align: middle;
+}
+
+.table tbody tr:hover {
+    background-color: #f6f8fb;
+}
+
+/* Party toggle switch - matches homepage form styling */
+.form-check-input {
+    width: 2.5rem;
+    height: 1.25rem;
+    background-color: #dfe3ec;
+    border: none;
+    cursor: pointer;
+}
+
+.form-check-input:checked {
+    background-color: #0062ba;
+    border-color: #0062ba;
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 3px rgba(0, 98, 186, 0.25);
+}
+
+/* Chart container */
+#detail-chart {
+    max-width: 100%;
+    height: auto !important;
+}
+
+/* Page header styling */
+.map-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.map-header h1 {
+    color: #00205b;
+    font-weight: 600;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.map-header p {
+    color: #4e596d;
+    font-size: 1.1rem;
+}
+
+/* Focus visible for accessibility - matches homepage */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+.btn:focus-visible {
+    outline: 3px solid #ffbd59;
+    outline-offset: 3px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #container {
+        height: 400px;
+    }
+
+    .valg-card {
+        padding: 1.25rem;
+    }
+
+    .map-header h1 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Loading states */
+.loading-spinner {
+    display: inline-block;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 3px solid #dfe3ec;
+    border-radius: 50%;
+    border-top-color: #0062ba;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Success message styling */
+.text-success {
+    color: #017a40;
+    font-weight: 600;
+}

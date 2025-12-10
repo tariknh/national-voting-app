@@ -4,11 +4,15 @@ using System.Collections.Generic;
 using System.Linq;
 using WebApplication1.Data;
 using System.Diagnostics;
+using System;
+using System.Threading.Tasks;
 
 namespace WebApplication1.Controllers
 {
     public class MapController : Controller
     {
+        // Configure the release time year, month, day, houer, minute, second, UTC
+        private static readonly DateTime ReleaseTime = new DateTime(2025, 9, 01, 21, 0, 0, DateTimeKind.Utc);
         private readonly ApplicationDbContext _context;
 
         // Party configuration moved from JavaScript
@@ -79,11 +83,21 @@ namespace WebApplication1.Controllers
 
         public IActionResult Index()
         {
-            // Pass party configuration to the view
+            var isDataAvailable = DateTime.UtcNow >= ReleaseTime;
+            var currentTime = DateTime.UtcNow;
+            
             ViewData["Title"] = "Valgkart Norge";
+            ViewData["IsMapAvailable"] = isDataAvailable;
+            ViewData["ReleaseTime"] = ReleaseTime.ToString("o"); // ISO 8601 format
+            ViewData["CurrentTime"] = currentTime.ToString("o");
             ViewData["PartyColors"] = PartyColors;
             ViewData["PartyNames"] = PartyNames;
             ViewData["MainParties"] = MainParties;
+            
+            // Log for debugging
+            Console.WriteLine($"Current UTC time: {currentTime}");
+            Console.WriteLine($"Release time: {ReleaseTime}");
+            Console.WriteLine($"Data available: {isDataAvailable}");
 
             return View();
         }
@@ -91,6 +105,18 @@ namespace WebApplication1.Controllers
         [HttpGet]
         public async Task<IActionResult> GetVotingData()
         {
+            // Check if data should be released
+            if (DateTime.UtcNow < ReleaseTime)
+            {
+                // Return 403 Forbidden with information about when data will be available
+                Response.Headers.Add("X-Release-Time", ReleaseTime.ToString("o"));
+                return StatusCode(403, new { 
+                    error = "Data not yet available",
+                    releaseTime = ReleaseTime.ToString("o"),
+                    currentTime = DateTime.UtcNow.ToString("o")
+                });
+            }
+            
             try
             {
                 var votingData = await _context.Stemmers.ToListAsync();
@@ -99,13 +125,24 @@ namespace WebApplication1.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"Error fetching voting data: {ex.Message}");
-                return Json(new List<object>());
+                return StatusCode(500, new { error = "Internal server error" });
             }
         }
 
         [HttpGet]
         public async Task<IActionResult> GetProcessedVotingData()
         {
+            // Protect Data Access
+            if (DateTime.UtcNow < ReleaseTime)
+            {
+                Response.Headers.Add("X-Release-Time", ReleaseTime.ToString("o"));
+                return StatusCode(403, new { 
+                    error = "Data not yet available",
+                    releaseTime = ReleaseTime.ToString("o"),
+                    currentTime = DateTime.UtcNow.ToString("o")
+                });
+            }
+            
             try
             {
                 var votingData = await _context.Stemmers.ToListAsync();
@@ -142,7 +179,7 @@ namespace WebApplication1.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"Error processing voting data: {ex.Message}");
-                return Json(new { Data = new List<object>(), Config = new { } });
+                return StatusCode(500, new { error = "Internal server error" });
             }
         }
 
@@ -157,10 +194,22 @@ namespace WebApplication1.Controllers
             });
         }
 
+        [HttpGet]
+        public IActionResult GetDataStatus()
+        {
+            var isAvailable = DateTime.UtcNow >= ReleaseTime;
+            return Json(new
+            {
+                isAvailable = isAvailable,
+                releaseTime = ReleaseTime.ToString("o"),
+                currentTime = DateTime.UtcNow.ToString("o"),
+                secondsUntilRelease = isAvailable ? 0 : (int)(ReleaseTime - DateTime.UtcNow).TotalSeconds
+            });
+        }
+
         // Helper methods moved from JavaScript
         private string NormalizeName(string name)
         {
-            Console.WriteLine($"User Found: {name}");
             name = name.ToLower()
                 .Trim()
                 .Replace(" kommune", "")

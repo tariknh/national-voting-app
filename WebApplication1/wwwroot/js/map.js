@@ -1,25 +1,50 @@
 ﻿// Map Application Module
 const mapApp = (function() {
     // Get configuration from server (passed from controller)
-    const partyColors = {};
-    const partyNames = {};
-    const mainParties = [];
+    const config = window.MAP_CONFIG || { partyColors: {}, partyNames: {}, mainParties: [] };
+    const partyColors = config.partyColors;
+    const partyNames = config.partyNames;
+    const mainParties = config.mainParties;
+    const isDataAvailable = config.isAvailable;
+    const releaseTime = config.releaseTime;
 
     let chartInstance = null;
     let votingDataMap = {};
     let currentMunicipalityData = null;
+    let countdownInterval = null;
 
     // Utility functions
     function normalizeName(name, region) {
-        name.toLowerCase()
+        name = name.toLowerCase()
             .trim()
             .replace(/\s+kommune$/i, '')
             .replace(/\s+/g, ' ');
 
-        if (name == "Våler"){
-            return `${name} ${region}`;
+        if (name === "våler"){
+            return `${name} ${region.toLowerCase()}`;
+            
         }
         return name;
+    }
+
+    // Function to update map visibility based on party toggles
+    function updateMapVisibility() {
+        const chart = Highcharts.charts.find(c => c && c.renderTo.id === 'container');
+        if (!chart) return;
+
+        const hiddenParties = [];
+        document.querySelectorAll('.party-toggle:not(:checked)').forEach(toggle => {
+            hiddenParties.push(toggle.dataset.party);
+        });
+
+        chart.series[0].points.forEach(point => {
+            if (point.leadingParty && hiddenParties.includes(point.leadingParty)) {
+                point.update({ color: '#cccccc' }, false);
+            } else if (point.leadingParty) {
+                point.update({ color: partyColors[point.leadingParty] }, false);
+            }
+        });
+        chart.redraw();
     }
 
     function getLeadingParty(municipalityData) {
@@ -52,6 +77,74 @@ const mapApp = (function() {
         })).filter(p => p.votes > 0).sort((a, b) => b.votes - a.votes);
     }
 
+    // Countdown timer function
+    function startCountdown() {
+        const countdownContainer = document.getElementById('countdown-container');
+        const countdownElement = document.getElementById('countdown');
+        const loadingDiv = document.getElementById('loading');
+
+        if (!isDataAvailable && releaseTime) {
+            loadingDiv.style.display = 'none';
+            countdownContainer.style.display = 'block';
+
+            const updateCountdown = () => {
+                const now = new Date();
+                const release = new Date(releaseTime);
+                const diff = release - now;
+
+                if (diff <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownContainer.innerHTML = '<p class="text-success">Valg resultatet er nå inne! Laster...</p>';
+                    // Reload the page to fetch the data
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                    return;
+                }
+
+                // Calculate time units
+                const months = Math.floor(diff / (1000 * 60 * 60 * 24 * 30));
+                const days = Math.floor((diff % (1000 * 60 * 60 * 24 * 30)) / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                // Build the countdown text
+                let parts = [];
+
+                if (months > 0) {
+                    parts.push(`${months} ${months === 1 ? 'måned' : 'måneder'}`);
+                }
+                if (days > 0) {
+                    parts.push(`${days} ${days === 1 ? 'dag' : 'dager'}`);
+                }
+                if (hours > 0) {
+                    parts.push(`${hours} ${hours === 1 ? 'time' : 'timer'}`);
+                }
+                if (minutes > 0) {
+                    parts.push(`${minutes} ${minutes === 1 ? 'minutt' : 'minutter'}`);
+                }
+                if (seconds > 0 || parts.length === 0) { // Always show seconds if nothing else
+                    parts.push(`${seconds} ${seconds === 1 ? 'sekund' : 'sekunder'}`);
+                }
+
+                // Join with commas and 'og' before the last item
+                let countdownText = '';
+                if (parts.length === 1) {
+                    countdownText = parts[0];
+                } else if (parts.length === 2) {
+                    countdownText = parts.join(' og ');
+                } else {
+                    countdownText = parts.slice(0, -1).join(', ') + ' og ' + parts[parts.length - 1];
+                }
+
+                countdownElement.innerHTML = countdownText;
+            };
+
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+        }
+    }
     // Create legend using main parties from controller
     function createLegend(showAll = false) {
         const legend = document.getElementById('legend');
@@ -118,30 +211,62 @@ const mapApp = (function() {
         });
     }
 
+    // Process voting data
+    function processVotingData(votingData) {
+        const mapData = [];
+
+        // Create lookup map with normalized names
+        votingData.forEach(item => {
+            const normalized = normalizeName(item.kommune);
+            votingDataMap[normalized] = item;
+        });
+
+        return mapData;
+    }
+
     // Create the Highcharts map
     async function createMap() {
         try {
-            const configResponse = await fetch('/Map/GetPartyConfiguration');
-            const config = await configResponse.json();
-
-            // Populate the configuration objects 
-            Object.assign(partyColors, config.partyColors);
-            Object.assign(partyNames, config.partyNames);
-            mainParties.push(...config.mainParties);
-
             createLegend();
-            
-            // Load voting data from controller
-            const votingResponse = await fetch('/Map/GetVotingData');
-            const votingData = await votingResponse.json();
 
-            console.log('Voting data loaded:', votingData.length, 'municipalities');
+            const loadingDiv = document.getElementById('loading');
+            let mapTitle = 'Valgkart - Resultatene er ikke klare';
+            let votingData = [];
+            let mapData = [];
 
-            // Create lookup map with normalized names
-            votingData.forEach(item => {
-                const normalized = normalizeName(item.kommune);
-                votingDataMap[normalized] = item;
-            });
+            // Check if we should show countdown or try to fetch data
+            if (!isDataAvailable) {
+                startCountdown();
+                mapTitle = 'Valgkart - Venter på resultater';
+            } else {
+                // Try to fetch the voting data
+                try {
+                    const votingResponse = await fetch('/Map/GetVotingData');
+
+                    if (votingResponse.ok) {
+                        // Data is released and fetched successfully
+                        votingData = await votingResponse.json();
+                        mapTitle = 'Valgresultat - Farget etter ledende parti';
+                        console.log('Voting data loaded:', votingData.length, 'municipalities');
+
+                        // Process the data
+                        mapData = processVotingData(votingData);
+
+                        loadingDiv.style.display = 'none';
+                    } else if (votingResponse.status === 403) {
+                        // Data is still protected
+                        const errorData = await votingResponse.json();
+                        console.log('Data not yet available:', errorData);
+                        startCountdown();
+                    } else {
+                        // Handle other errors
+                        throw new Error(`Failed to load data: ${votingResponse.statusText}`);
+                    }
+                } catch (fetchError) {
+                    console.error('Error fetching data:', fetchError);
+                    loadingDiv.innerHTML = '<p class="text-danger">Feil ved lasting av data. Prøv igjen senere.</p>';
+                }
+            }
 
             // Load the Highcharts topology
             const topology = await fetch(
@@ -149,12 +274,12 @@ const mapApp = (function() {
             ).then(response => response.json());
 
             console.log('Topology loaded');
-            console.log(topology);
-            document.getElementById('loading').style.display = 'none';
+
+            if (document.getElementById('loading').style.display !== 'none') {
+                document.getElementById('loading').style.display = 'none';
+            }
 
             // Prepare data for Highcharts
-            const mapData = [];
-
             if (topology.objects && topology.objects.default && topology.objects.default.geometries) {
                 topology.objects.default.geometries.forEach(geo => {
                     const hcKey = geo.properties['hc-key'];
@@ -189,110 +314,86 @@ const mapApp = (function() {
             // Create the Highcharts map
             const chart = Highcharts.mapChart('container', {
                 chart: {
-                    map: topology,
-                    backgroundColor: '#e8f4f8'
+                    map: topology
                 },
-
-                mapView: {
-                    projection: { name: 'LambertConformalConic' },
-                    padding: [10, 10, 10, 10],
-                },
-
                 title: {
-                    text: 'Norges Valgkart',
-                    style: {
-                        fontSize: '24px',
-                        fontWeight: 'bold'
+                    text: mapTitle
+                },
+                mapNavigation: {
+                    enabled: true,
+                    buttonOptions: {
+                        verticalAlign: 'bottom'
                     }
                 },
-
-                subtitle: { text: 'Klikk på en kommune for detaljer' },
-
-                mapNavigation: { enabled: true, buttonOptions: { verticalAlign: 'bottom' } },
-
-                tooltip: {
-                    useHTML: true,
-                    formatter: function() {
-                        const point = this.point;
-                        if (point.municipalityData) {
-                            const leading = getLeadingParty(point.municipalityData);
-                            const totalVotes = getTotalVotes(point.municipalityData);
-                            const partyName = leading.party ? partyNames[leading.party] : 'Ingen stemmer';
-                            return `<b>${point.municipalityName}</b><br/>
-                        Leder: ${partyName}<br/>
-                        Stemmer: ${totalVotes.toLocaleString()}`;
-                        }
-                        return `<b>${point.municipalityName}</b><br/>Ingen data`;
-                    }
-                },
-
                 series: [{
                     data: mapData,
-                    name: 'Kommuner',
-                    states: { hover: { enabled: false } },
-                    dataLabels: { enabled: false },
-                    point: {
-                        events: {
-                            click: function() {
-                                if (this.municipalityData) {
-                                    showMunicipalityDetails({
-                                        name: this.municipalityName,
-                                        data: this.municipalityData
-                                    });
-                                } else {
-                                    showNationalTotals();
-                                }
+                    name: 'Valgresultater',
+                    states: {
+                        hover: {
+                            brightness: 0.1
+                        }
+                    },
+                    dataLabels: {
+                        enabled: false
+                    },
+                    events: {
+                        click: function(e) {
+                            if (e.point.municipalityData) {
+                                showMunicipalityDetails({
+                                    name: e.point.municipalityName,
+                                    data: e.point.municipalityData
+                                });
                             }
                         }
                     }
                 }],
-                credits: {
-                    enabled: true
+                tooltip: {
+                    formatter: function() {
+                        if (this.point.municipalityData) {
+                            const leading = this.point.leadingParty;
+                            const leadingVotes = this.point.municipalityData[leading] || 0;
+                            const totalVotes = getTotalVotes(this.point.municipalityData);
+                            const percentage = totalVotes > 0 ? ((leadingVotes / totalVotes) * 100).toFixed(1) : 0;
+
+                            return '<b>' + this.point.municipalityName + '</b><br>' +
+                                'Ledende parti: ' + partyNames[leading] + '<br>' +
+                                'Stemmer: ' + leadingVotes.toLocaleString() + ' (' + percentage + '%)';
+                        } else {
+                            return '<b>' + this.point.municipalityName + '</b><br>Ingen data';
+                        }
+                    }
                 }
             });
 
-            showNationalTotals();
-            setupMunicipalitySearch(chart, votingDataMap);
+            // Set up municipality search
+            setupMunicipalitySearch(chart, votingData);
+
         } catch (error) {
             console.error('Error creating map:', error);
-            document.getElementById('container').innerHTML =
-                '<div class="alert alert-danger m-3">Feil ved lasting av kart: ' + error.message + '</div>';
+            document.getElementById('loading').innerHTML =
+                '<p class="text-danger">Feil ved opprettelse av kart. Vennligst prøv igjen senere.</p>';
         }
     }
 
-    function updateMapVisibility() {
-        const activeParties = Array.from(document.querySelectorAll('.party-toggle:checked'))
-            .map(t => t.dataset.party);
-
-        const chart = Highcharts.charts.find(c => c && c.renderTo.id === 'container');
-        if (!chart) return;
-
-        chart.series[0].points.forEach(point => {
-            if (!point.leadingParty) return;
-            const isVisible = activeParties.includes(point.leadingParty);
-            point.update({ color: isVisible ? partyColors[point.leadingParty] : '#cccccc' }, false);
-        });
-        chart.redraw();
-    }
-
-    function setupMunicipalitySearch(chart, votingDataMap) {
+    // Setup municipality search functionality
+    function setupMunicipalitySearch(chart, votingData) {
         const searchInput = document.getElementById('municipality-search');
         const resultsDiv = document.getElementById('municipality-results');
 
-        const municipalities = Object.values(votingDataMap)
-            .map(m => m.kommune)
-            .sort((a, b) => a.localeCompare(b, 'no'));
+        const municipalities = votingData.map(d => d.kommune).sort();
 
-        searchInput.addEventListener('input', function () {
+        searchInput.addEventListener('input', function() {
             const query = this.value.trim().toLowerCase();
-            resultsDiv.innerHTML = '';
-
             if (!query) {
                 resultsDiv.style.display = 'none';
                 return;
             }
 
-            const matches = municipalities.filter(name => name.toLowerCase().includes(query)).slice(0, 8);
+            const matches = municipalities.filter(name =>
+                name.toLowerCase().includes(query)
+            ).slice(0, 10);
+
+            resultsDiv.innerHTML = '';
             if (matches.length === 0) {
                 resultsDiv.style.display = 'none';
                 return;
@@ -342,7 +443,7 @@ const mapApp = (function() {
     // Helper to zoom to and highlight a municipality
     function focusMunicipality(chart, kommuneName) {
         const point = chart.series[0].points.find(p =>
-            p.municipalityName.toLowerCase() === kommuneName.toLowerCase()
+            p.municipalityName && p.municipalityName.toLowerCase() === kommuneName.toLowerCase()
         );
 
         if (!point) {
@@ -394,6 +495,11 @@ const mapApp = (function() {
         const resultsDiv = document.getElementById('detail-results');
         const nationalBtn = document.getElementById('national-button');
 
+        if (!municipality.data) {
+            resultsDiv.innerHTML = '<p>Ingen data tilgjengelig for denne kommunen.</p>';
+            detailsDiv.style.display = 'none';
+            return;
+        }
 
         kommuneTitle.textContent = municipality.name;
 
