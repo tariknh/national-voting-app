@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using WebApplication1.Data;
 using DotNetEnv;
+using WebApplication1.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,7 +25,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-
+builder.Services.AddScoped<VotingTokenService>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
