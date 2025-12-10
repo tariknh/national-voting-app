@@ -10,7 +10,7 @@ using WebApplication1.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//load the secret .env file to the program (encryption and all that)
+//load the secret .env file to the program, encryption and all that
 Env.Load();
 
 //get the connection string from the .env file

@@ -1,0 +1,24 @@
+log:
+  level: info
+
+runner:
+  file: .runner
+  capacity: 1
+  timeout: 3h
+  labels:
+    - ubuntu-latest:docker://node:20-bookworm
+    - self-hosted
+
+cache:
+  enabled: true
+  dir: ""
+
+container:
+  network: bridge
+  privileged: false
+  options:
+  workdir_parent:
+  valid_volumes: []
+
+host:
+  workdir_parent:
