@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs
+bin/
+obj/
+publish/
+out/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# User files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Environment files - IMPORTANT: don't include secrets in image
+.env
+.env.local
+.env.*.local
+*.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test results
+TestResults/
+coverage/
+
+# Misc
+*.tmp
+*.temp
