@@ -10,12 +10,16 @@ using WebApplication1.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//load the secret .env file to the program, encryption and all that
-Env.Load();
+// Load .env file for local development (if it exists)
+if (File.Exists(".env"))
+{
+    Env.Load();
+}
 
-//get the connection string from the .env file
-var connectionString = Env.GetString("CONNECTION_STRING")
-    ?? throw new InvalidOperationException("Connection string not found in .env");
+// Get connection string from environment variable (Render) or .env file (local)
+var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING")
+    ?? Env.GetString("CONNECTION_STRING")
+    ?? throw new InvalidOperationException("Connection string not found in environment variables or .env file");
 // Enable console logging
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
