@@ -47,12 +47,8 @@ namespace VotingVerifier
             Console.WriteLine("1. Fyll inn test-stemmer");
             Console.WriteLine("2. Verifiser alle stemmer");
             Console.WriteLine("3. Vis statistikk");
-            Console.WriteLine("4. Avslutt");
-            Console.WriteLine("5. Vis tabeller i database");
-            Console.WriteLine("6. Vis kolonner i verifikasjon-tabell");
-            Console.WriteLine("7. Fjern duplikate tokens fra database");
-            Console.WriteLine("9. Vis kolonner i stemmer-tabell");
-            Console.WriteLine("10. Vis stemmetall i stemmer-tabell");
+            Console.WriteLine("4. Fjern duplikate tokens fra database");
+            Console.WriteLine("5. Avslutt");
             Console.Write("\nVelg alternativ: ");
 
             var choice = Console.ReadLine();
@@ -75,22 +71,10 @@ namespace VotingVerifier
                     await ShowStatistics(context);
                     break;
                 case "4":
-                    Console.WriteLine("Avslutter...");
-                    break;
-                case "5":
-                    await ListTables(context);
-                    break;
-                case "6":
-                    await ShowTableSchema(context);
-                    break;
-                case "7":
                     await RemoveDuplicates(verifier);
                     break;
-                case "9":
-                    await ShowStemmerColumns(context);
-                    break;
-                case "10":
-                    await ShowStemmerData(context);
+                case "5":
+                    Console.WriteLine("Avslutter...");
                     break;
                 default:
                     Console.WriteLine("Ugyldig valg!");
@@ -101,17 +85,15 @@ namespace VotingVerifier
         // Vektet tilfeldig partivelger basert på realistiske størrelser
         static int GetWeightedRandomParty(Random random)
         {
-            
-            
             double roll = random.NextDouble();
             
-            if (roll < 0.90) // 90% store partier
+            if (roll < 0.10) // 90% store partier
             {
                 return random.Next(1, 10); // Parti 1-9
             }
             else // 10% små partier
             {
-                return random.Next(10, 21); // Parti 10-20
+                return random.Next(10, 24); // Parti 10-23
             }
         }
 
@@ -196,7 +178,7 @@ namespace VotingVerifier
                 {
                     var token = verifier.GenerateToken();
                     
-                    // Bruk vektet tilfeldig parti (int mellom 1-20)
+                    // Bruk vektet tilfeldig parti (int mellom 1-23)
                     var partiId = GetWeightedRandomParty(random);
                     
                     var kommune = kommuner[random.Next(kommuner.Length)];
@@ -222,7 +204,7 @@ namespace VotingVerifier
                     // Bruk partiId i stedet for partinavn
                     IncrementPartyCounterById(stemme, partiId);
                     
-                    // SAVE HVER 10. STEMME
+                    // SAVE HVER 100. STEMME
                     if ((i + 1) % 100 == 0)
                     {
                         await context.SaveChangesAsync();
@@ -298,61 +280,15 @@ namespace VotingVerifier
             }
         }
 
-        static async Task ListTables(VotingDbContext context)
+        static async Task RemoveDuplicates(VotingVerifierService verifier)
         {
-            Console.WriteLine("\n TABELLER I DATABASEN:\n");
+            Console.WriteLine("\n FJERNER DUPLIKATE TOKENS...\n");
             
-            try
+            var removedCount = await verifier.RemoveDuplicateTokensAsync();
+            
+            if (removedCount > 0)
             {
-                var connection = context.Database.GetDbConnection();
-                await connection.OpenAsync();
-                
-                var command = connection.CreateCommand();
-                command.CommandText = @"
-                    SELECT table_name 
-                    FROM information_schema.tables 
-                    WHERE table_schema = 'public'
-                    ORDER BY table_name;
-                ";
-                
-                using var reader = await command.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    Console.WriteLine($"  - {reader.GetString(0)}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Feil: {ex.Message}");
-            }
-        }
-
-        static async Task ShowTableSchema(VotingDbContext context)
-        {
-            Console.WriteLine("\n KOLONNER I verifikasjon-TABELLEN:\n");
-    
-            try
-            {
-                var connection = context.Database.GetDbConnection();
-                await connection.OpenAsync();
-        
-                var command = connection.CreateCommand();
-                command.CommandText = @"
-                    SELECT column_name, data_type 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'verifikasjon'
-                    ORDER BY ordinal_position;
-                ";
-        
-                using var reader = await command.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    Console.WriteLine($"  - {reader.GetString(0)} ({reader.GetString(1)})");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Feil: {ex.Message}");
+                Console.WriteLine($"\n Operasjon fullført! {removedCount} duplikater fjernet.");
             }
         }
 
@@ -381,82 +317,12 @@ namespace VotingVerifier
                 case 18: stemme.Piratpartiet++; break;
                 case 19: stemme.Helsepartiet++; break;
                 case 20: stemme.Folkestyret++; break;
+                case 21: stemme.NorskRepublikanskAllianse++; break;
+                case 22: stemme.Verdipartiet++; break;
+                case 23: stemme.PartietSentrum++; break;
                 default:
                     Console.WriteLine($" Ukjent parti-ID: {partiId}");
                     break;
-            }
-        }
-
-        static async Task ShowStemmerColumns(VotingDbContext context)
-        {
-            Console.WriteLine("\n KOLONNER I stemmer-TABELLEN:\n");
-    
-            try
-            {
-                var connection = context.Database.GetDbConnection();
-                await connection.OpenAsync();
-        
-                var command = connection.CreateCommand();
-                command.CommandText = @"
-                    SELECT column_name, data_type 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'stemmer'
-                    ORDER BY ordinal_position;
-                ";
-        
-                using var reader = await command.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    Console.WriteLine($"  - {reader.GetString(0)} ({reader.GetString(1)})");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Feil: {ex.Message}");
-            }
-        }
-
-        static async Task ShowStemmerData(VotingDbContext context)
-        {
-            Console.WriteLine("\n STEMMETALL I STEMMER-TABELLEN:\n");
-    
-            var stemmers = await context.Stemmers
-                .OrderByDescending(s => s.Ap + s.Hoyre + s.Sp + s.Frp + s.Sv)
-                .Take(10)
-                .ToListAsync();
-    
-            foreach (var stemme in stemmers)
-            {
-                var total = stemme.Ap + stemme.Hoyre + stemme.Sp + stemme.Frp + stemme.Sv + 
-                            stemme.Rodt + stemme.Venstre + stemme.Krf + stemme.Mdg + stemme.Inp + 
-                            stemme.Pdk + stemme.Demokratene + stemme.Liberalistene + 
-                            stemme.Pensjonistpartiet + stemme.Kystpartiet + stemme.Alliansen + 
-                            stemme.Nkp + stemme.Piratpartiet + stemme.Helsepartiet + 
-                            stemme.Folkestyret + stemme.NorskRepublikanskAllianse + 
-                            stemme.Verdipartiet + stemme.PartietSentrum;
-        
-                Console.WriteLine($"{stemme.Kommune}: {total} stemmer (Ap:{stemme.Ap}, H:{stemme.Hoyre}, Sp:{stemme.Sp}, Frp:{stemme.Frp}, Sv:{stemme.Sv})");
-            }
-    
-            var totalVotes = await context.Stemmers.SumAsync(s => 
-                s.Ap + s.Hoyre + s.Sp + s.Frp + s.Sv + s.Rodt + s.Venstre + 
-                s.Krf + s.Mdg + s.Inp + s.Pdk + s.Demokratene + s.Liberalistene + 
-                s.Pensjonistpartiet + s.Kystpartiet + s.Alliansen + s.Nkp + 
-                s.Piratpartiet + s.Helsepartiet + s.Folkestyret + 
-                s.NorskRepublikanskAllianse + s.Verdipartiet + s.PartietSentrum);
-    
-            Console.WriteLine($"\n Totalt antall stemmer i Stemmers-tabellen: {totalVotes}");
-        }
-
-        static async Task RemoveDuplicates(VotingVerifierService verifier)
-        {
-            Console.WriteLine("\n FJERNER DUPLIKATE TOKENS...\n");
-            
-            var removedCount = await verifier.RemoveDuplicateTokensAsync();
-            
-            if (removedCount > 0)
-            {
-                Console.WriteLine($"\n Operasjon fullført! {removedCount} duplikater fjernet.");
             }
         }
 
@@ -484,6 +350,9 @@ namespace VotingVerifier
                 18 => "Piratpartiet",
                 19 => "Helsepartiet",
                 20 => "Folkestyret",
+                21 => "Norsk Republikansk Allianse",
+                22 => "Verdipartiet",
+                23 => "Partiet Sentrum",
                 _ => $"Parti {id}"
             };
         }
